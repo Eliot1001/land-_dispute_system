@@ -1,0 +1,29 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Submit Dispute</title>
+    <link rel="stylesheet" href="{% static 'css/submitcase.css' %}">
+</head>
+
+<body>
+
+<div class="form-box">
+
+    <h2>Submit Land Dispute</h2>
+
+    <input type="text" placeholder="Full Name">
+    <input type="text" placeholder="Phone Number">
+    <input type="text" placeholder="Location">
+
+    <input type="text" placeholder="Dispute Title">
+
+    <textarea placeholder="Describe the issue..."></textarea>
+
+    <button onclick="submitCase()">Submit</button>
+
+</div>
+
+<script src="{% static 'js/app.js' %}"></script>
+</body>
+</html>

@@ -1,0 +1,434 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Case Details - Land Dispute Management System</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f7fa;
+        }
+        
+        .container {
+            display: flex;
+            min-height: 100vh;
+        }
+        
+        .sidebar {
+            width: 250px;
+            background: linear-gradient(180deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 30px 20px;
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .sidebar h2 {
+            font-size: 22px;
+            margin-bottom: 30px;
+            color: #3498db;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 15px;
+        }
+        
+        .sidebar a {
+            display: block;
+            color: white;
+            text-decoration: none;
+            padding: 12px 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            transition: all 0.3s;
+        }
+        
+        .sidebar a:hover {
+            background-color: #3498db;
+            padding-left: 25px;
+        }
+        
+        .sidebar a i {
+            margin-right: 10px;
+            width: 20px;
+        }
+        
+        .logout-btn {
+            margin-top: 40px;
+            background-color: #e74c3c !important;
+        }
+        
+        .main-content {
+            flex: 1;
+            margin-left: 250px;
+            padding: 30px;
+        }
+        
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #3498db;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        .back-link:hover {
+            color: #2980b9;
+        }
+        
+        .detail-container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            padding: 30px;
+        }
+        
+        .case-header {
+            border-bottom: 2px solid #ecf0f1;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .case-header h1 {
+            color: #2c3e50;
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .status-pending {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        
+        .status-in_progress {
+            background-color: #d1ecf1;
+            color: #0c5460;
+        }
+        
+        .status-resolved {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        .status-escalated {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        
+        .case-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .case-section {
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        
+        .case-section h3 {
+            color: #2c3e50;
+            font-size: 16px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .case-section h3 i {
+            margin-right: 10px;
+            color: #3498db;
+        }
+        
+        .case-field {
+            margin: 12px 0;
+            font-size: 14px;
+        }
+        
+        .case-field strong {
+            color: #2c3e50;
+            display: block;
+            margin-bottom: 5px;
+        }
+        
+        .case-field-value {
+            color: #7f8c8d;
+            padding: 8px 12px;
+            background: white;
+            border-radius: 4px;
+        }
+        
+        .description-section {
+            grid-column: 1 / -1;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+        
+        .description-section h3 {
+            color: #2c3e50;
+            font-size: 16px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .description-section h3 i {
+            margin-right: 10px;
+            color: #3498db;
+        }
+        
+        .description-text {
+            color: #7f8c8d;
+            line-height: 1.6;
+            background: white;
+            padding: 15px;
+            border-radius: 4px;
+            border-left: 4px solid #3498db;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px solid #ecf0f1;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .btn-primary {
+            background: #3498db;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #2980b9;
+        }
+        
+        .btn-success {
+            background: #27ae60;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #229954;
+        }
+        
+        .form-group {
+            margin: 20px 0;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #2c3e50;
+            font-weight: 600;
+        }
+        
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ecf0f1;
+            border-radius: 5px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+        
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <h2>⚖️ Land Dispute System</h2>
+            <a href="{% url 'dashboard' %}"><i class="fas fa-chart-line"></i> Dashboard</a>
+            <a href="{% url 'case_map' %}"><i class="fas fa-map-location-dot"></i> Case Map</a>
+            <a href="{% url 'settings' %}"><i class="fas fa-cog"></i> Settings</a>
+            <a href="{% url 'logout' %}" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="main-content">
+            <a href="{% url 'dashboard' %}" class="back-link"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
+            
+            <div class="detail-container">
+                <div class="case-header">
+                    <h1>{{ case.title }}</h1>
+                    <span class="status-badge status-{{ case.status }}">{{ case.get_status_display }}</span>
+                </div>
+                
+                <div class="case-grid">
+                    <!-- Citizen Information -->
+                    <div class="case-section">
+                        <h3><i class="fas fa-user"></i> Citizen Information</h3>
+                        <div class="case-field">
+                            <strong>Name</strong>
+                            <div class="case-field-value">{{ case.citizen_name }}</div>
+                        </div>
+                        <div class="case-field">
+                            <strong>Phone Number</strong>
+                            <div class="case-field-value">{{ case.citizen_phone }}</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Case Information -->
+                    <div class="case-section">
+                        <h3><i class="fas fa-file-alt"></i> Case Information</h3>
+                        <div class="case-field">
+                            <strong>Location</strong>
+                            <div class="case-field-value">{{ case.location }}</div>
+                        </div>
+                        <div class="case-field">
+                            <strong>Coordinates</strong>
+                            <div class="case-field-value">{{ case.latitude }}, {{ case.longitude }}</div>
+                        </div>
+                        <div class="case-field">
+                            <strong>Date Filed</strong>
+                            <div class="case-field-value">{{ case.created_at|date:"F d, Y" }}</div>
+                        </div>
+                        <div class="case-field">
+                            <strong>Last Updated</strong>
+                            <div class="case-field-value">{{ case.updated_at|date:"F d, Y \a\t H:i" }}</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Assignment -->
+                    <div class="case-section">
+                        <h3><i class="fas fa-user-check"></i> Assignment</h3>
+                        <div class="case-field">
+                            <strong>Assigned To</strong>
+                            <div class="case-field-value">
+                                {% if case.assigned_to %}
+                                    {{ case.assigned_to.get_full_name|default:case.assigned_to.username }}
+                                {% else %}
+                                    <span style="color: #e74c3c;">Unassigned</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% if not case.assigned_to %}
+                        <form method="POST" action="{% url 'assign_case' case.id %}" style="margin-top: 15px;">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-success" style="width: 100%;">
+                                <i class="fas fa-hand-paper"></i> Assign to Me
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Map -->
+                    <div class="case-section">
+                        <h3><i class="fas fa-map"></i> Location Map</h3>
+                        <a href="{% url 'case_map' %}?case={{ case.id }}" class="btn btn-primary" style="width: 100%; text-align: center;">
+                            <i class="fas fa-external-link-alt"></i> View on Map
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- Description -->
+                <div class="description-section">
+                    <h3><i class="fas fa-align-left"></i> Case Description</h3>
+                    <div class="description-text">{{ case.description }}</div>
+                </div>
+                
+                <!-- Case Update Form -->
+                <form method="POST">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="status">Update Status</label>
+                        <select name="status" id="status">
+                            <option value="pending" {% if case.status == 'pending' %}selected{% endif %}>Pending</option>
+                            <option value="in_progress" {% if case.status == 'in_progress' %}selected{% endif %}>In Progress</option>
+                            <option value="escalated" {% if case.status == 'escalated' %}selected{% endif %}>Escalated</option>
+                            <option value="resolved" {% if case.status == 'resolved' %}selected{% endif %}>Resolved</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="notes">Case Notes</label>
+                        <textarea name="notes" id="notes" rows="5" placeholder="Add notes about this case...">{{ case.notes }}</textarea>
+                    </div>
+                    
+                    {% if case.documents.all %}
+                    <div style="background: #ecf0f1; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                        <h3 style="margin-bottom: 15px; color: #2c3e50;">📎 Evidence Documents ({{ case.documents.count }})</h3>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px;">
+                            {% for doc in case.documents.all %}
+                            <div style="background: white; padding: 15px; border-radius: 8px; border-left: 4px solid #3498db; transition: all 0.3s;">
+                                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                                    {% if doc.file_extension|lower in 'pdf' %}
+                                        <i class="fas fa-file-pdf" style="font-size: 24px; color: #dc3545;"></i>
+                                    {% elif doc.file_extension|lower in 'jpg,jpeg,png' %}
+                                        <i class="fas fa-image" style="font-size: 24px; color: #28a745;"></i>
+                                    {% elif doc.file_extension|lower in 'doc,docx' %}
+                                        <i class="fas fa-file-word" style="font-size: 24px; color: #007bff;"></i>
+                                    {% else %}
+                                        <i class="fas fa-file" style="font-size: 24px; color: #6c757d;"></i>
+                                    {% endif %}
+                                    <div style="flex: 1;">
+                                        <div style="font-weight: 600; font-size: 13px; color: #333;">{{ doc.title|truncatewords:3 }}</div>
+                                        <div style="font-size: 11px; color: #999;">{{ doc.file_size_mb }} MB • {{ doc.uploaded_at|date:"M d, Y" }}</div>
+                                    </div>
+                                </div>
+                                <a href="{% url 'download_document_officer' doc.id %}" style="display: inline-block; background: #3498db; color: white; padding: 8px 12px; border-radius: 5px; text-decoration: none; font-size: 12px; transition: all 0.3s;">
+                                    <i class="fas fa-download"></i> Download
+                                </a>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="action-buttons">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Save Changes
+                        </button>
+                        <a href="{% url 'dashboard' %}" class="btn" style="background: #95a5a6; color: white;">
+                            <i class="fas fa-times"></i> Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <script src="{% static 'js/app.js' %}"></script>
+</body>
+</html>

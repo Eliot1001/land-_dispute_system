@@ -1,0 +1,359 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Case Map - Land Dispute Management System</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f7fa;
+        }
+        
+        .container {
+            display: flex;
+            min-height: 100vh;
+        }
+        
+        .sidebar {
+            width: 250px;
+            background: linear-gradient(180deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 30px 20px;
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+            z-index: 100;
+        }
+        
+        .sidebar h2 {
+            font-size: 22px;
+            margin-bottom: 30px;
+            color: #3498db;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 15px;
+        }
+        
+        .sidebar a {
+            display: block;
+            color: white;
+            text-decoration: none;
+            padding: 12px 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            transition: all 0.3s;
+        }
+        
+        .sidebar a:hover {
+            background-color: #3498db;
+            padding-left: 25px;
+        }
+        
+        .sidebar a i {
+            margin-right: 10px;
+            width: 20px;
+        }
+        
+        .logout-btn {
+            margin-top: 40px;
+            background-color: #e74c3c !important;
+        }
+        
+        .main-content {
+            flex: 1;
+            margin-left: 250px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .map-header {
+            background: white;
+            padding: 20px 30px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            border-bottom: 2px solid #ecf0f1;
+        }
+        
+        .map-header h1 {
+            color: #2c3e50;
+            font-size: 28px;
+            margin-bottom: 5px;
+        }
+        
+        .map-header p {
+            color: #7f8c8d;
+            font-size: 14px;
+        }
+        
+        #map {
+            flex: 1;
+            z-index: 1;
+        }
+        
+        .map-info {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            max-width: 300px;
+            z-index: 50;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .map-info h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #ecf0f1;
+        }
+        
+        .map-info-item {
+            margin: 10px 0;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            font-size: 13px;
+        }
+        
+        .map-info-item strong {
+            color: #2c3e50;
+            display: block;
+            margin-bottom: 3px;
+        }
+        
+        .map-info-value {
+            color: #7f8c8d;
+        }
+        
+        .close-info {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #ecf0f1;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+            font-size: 18px;
+            color: #2c3e50;
+        }
+        
+        .close-info:hover {
+            background: #bdc3c7;
+        }
+        
+        .legend {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            z-index: 50;
+            position: absolute;
+            bottom: 30px;
+            left: 280px;
+        }
+        
+        .legend h4 {
+            margin-bottom: 10px;
+            color: #2c3e50;
+            font-size: 14px;
+        }
+        
+        .legend-item {
+            margin: 8px 0;
+            font-size: 12px;
+            color: #7f8c8d;
+            display: flex;
+            align-items: center;
+        }
+        
+        .legend-color {
+            display: inline-block;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .pending-color { background-color: #f39c12; }
+        .in-progress-color { background-color: #3498db; }
+        .resolved-color { background-color: #27ae60; }
+        .escalated-color { background-color: #e74c3c; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <h2>⚖️ Land Dispute System</h2>
+            <a href="{% url 'dashboard' %}"><i class="fas fa-chart-line"></i> Dashboard</a>
+            <a href="{% url 'case_map' %}"><i class="fas fa-map-location-dot"></i> Case Map</a>
+            <a href="{% url 'settings' %}"><i class="fas fa-cog"></i> Settings</a>
+            <a href="{% url 'logout' %}" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="map-header">
+                <h1>Case Location Map</h1>
+                <p>View all land dispute cases on the map</p>
+            </div>
+            
+            <!-- Map Container -->
+            <div id="map"></div>
+            
+            <!-- Legend -->
+            <div class="legend">
+                <h4>Case Status</h4>
+                <div class="legend-item">
+                    <span class="legend-color pending-color"></span>
+                    <span>Pending</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-color in-progress-color"></span>
+                    <span>In Progress</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-color resolved-color"></span>
+                    <span>Resolved</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-color escalated-color"></span>
+                    <span>Escalated</span>
+                </div>
+            </div>
+            
+            <!-- Case Info Panel -->
+            <div class="map-info" id="mapInfo">
+                <button class="close-info" onclick="closeInfo()"><i class="fas fa-times"></i></button>
+                <h3>Case Details</h3>
+                <p style="color: #7f8c8d; font-size: 13px;">Click on a marker to view case details</p>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+    <script>
+        // Initialize map centered on Tanzania
+        const map = L.map('map').setView([-6.3690, 34.8888], 6);
+        
+        // Add tile layer
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors',
+            maxZoom: 19
+        }).addTo(map);
+        
+        // Case data
+        const casesData = {{ cases_json|safe }};
+        
+        // Color mapping for status
+        const statusColors = {
+            'pending': '#f39c12',
+            'in_progress': '#3498db',
+            'resolved': '#27ae60',
+            'escalated': '#e74c3c'
+        };
+        
+        // Get case ID from URL query parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        const targetCaseId = urlParams.get('case') ? parseInt(urlParams.get('case')) : null;
+        let targetCaseMarker = null;
+        
+        // Add markers for each case
+        casesData.forEach(caseData => {
+            const color = statusColors[caseData.status] || '#3498db';
+            
+            // Create custom icon
+            const icon = L.divIcon({
+                html: `<div style="background-color: ${color}; width: 35px; height: 35px; border-radius: 50%; border: 3px solid white; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 10px rgba(0,0,0,0.2);"><i style="color: white; font-size: 16px;" class="fas fa-map-pin"></i></div>`,
+                className: 'case-marker',
+                iconSize: [35, 35],
+                popupAnchor: [0, -15]
+            });
+            
+            // Create marker
+            const marker = L.marker([caseData.lat, caseData.lng], { icon: icon })
+                .bindPopup(`<div style="min-width: 250px;"><strong>${caseData.title}</strong><br>Citizen: ${caseData.citizen}<br>Location: ${caseData.location}<br><a href="/case/${caseData.id}/" style="color: #3498db; text-decoration: none;">View Details →</a></div>`)
+                .addTo(map);
+            
+            // On marker click, show info panel
+            marker.on('click', function() {
+                showCaseInfo(caseData);
+            });
+            
+            // Store marker if this is the target case
+            if (targetCaseId && caseData.id === targetCaseId) {
+                targetCaseMarker = { marker: marker, caseData: caseData };
+            }
+        });
+        
+        // If a specific case was requested via URL parameter, zoom to it
+        if (targetCaseMarker) {
+            setTimeout(function() {
+                // Zoom to the specific case location with closer zoom level
+                map.setView([targetCaseMarker.caseData.lat, targetCaseMarker.caseData.lng], 12);
+                // Show the case info panel
+                showCaseInfo(targetCaseMarker.caseData);
+                // Open the popup
+                targetCaseMarker.marker.openPopup();
+            }, 500);
+        }
+        
+        function showCaseInfo(caseData) {
+            const statusLabels = {
+                'pending': 'Pending',
+                'in_progress': 'In Progress',
+                'resolved': 'Resolved',
+                'escalated': 'Escalated'
+            };
+            
+            const infoPanel = document.getElementById('mapInfo');
+            infoPanel.innerHTML = `
+                <button class="close-info" onclick="closeInfo()"><i class="fas fa-times"></i></button>
+                <h3>${caseData.title}</h3>
+                <div class="map-info-item">
+                    <strong>Citizen:</strong>
+                    <span class="map-info-value">${caseData.citizen}</span>
+                </div>
+                <div class="map-info-item">
+                    <strong>Location:</strong>
+                    <span class="map-info-value">${caseData.location}</span>
+                </div>
+                <div class="map-info-item">
+                    <strong>Status:</strong>
+                    <span class="map-info-value" style="text-transform: capitalize;">${statusLabels[caseData.status]}</span>
+                </div>
+                <div class="map-info-item">
+                    <strong>Coordinates:</strong>
+                    <span class="map-info-value">${caseData.lat.toFixed(4)}, ${caseData.lng.toFixed(4)}</span>
+                </div>
+                <a href="/case/${caseData.id}/" style="display: block; margin-top: 15px; padding: 10px; background: #3498db; color: white; text-align: center; border-radius: 5px; text-decoration: none; font-weight: 600;">View Full Details</a>
+            `;
+        }
+        
+        function closeInfo() {
+            const infoPanel = document.getElementById('mapInfo');
+            infoPanel.innerHTML = `
+                <button class="close-info" onclick="closeInfo()"><i class="fas fa-times"></i></button>
+                <h3>Case Details</h3>
+                <p style="color: #7f8c8d; font-size: 13px;">Click on a marker to view case details</p>
+            `;
+        }
+    </script>
+</body>
+</html>

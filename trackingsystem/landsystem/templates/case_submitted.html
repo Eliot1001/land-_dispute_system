@@ -1,0 +1,282 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Case Submitted - Land Dispute Management System</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+            color: white;
+            padding: 50px 20px;
+        }
+        
+        .header .icon {
+            font-size: 60px;
+            margin-bottom: 20px;
+            animation: bounce 0.6s;
+        }
+        
+        @keyframes bounce {
+            0% { transform: scale(0); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+        
+        .content {
+            padding: 40px;
+        }
+        
+        .case-info {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            text-align: left;
+        }
+        
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #ecf0f1;
+        }
+        
+        .info-item:last-child {
+            border-bottom: none;
+        }
+        
+        .info-label {
+            color: #667eea;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        .info-value {
+            color: #2c3e50;
+            font-size: 14px;
+            word-break: break-word;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            background: #f39c12;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+        }
+        
+        .message {
+            color: #7f8c8d;
+            font-size: 14px;
+            line-height: 1.6;
+            margin: 20px 0;
+        }
+        
+        .btn-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+        }
+        
+        .btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-secondary {
+            background: #ecf0f1;
+            color: #2c3e50;
+        }
+        
+        .btn-secondary:hover {
+            background: #bdc3c7;
+        }
+        
+        .timeline {
+            margin-top: 30px;
+            text-align: left;
+        }
+        
+        .timeline-item {
+            display: flex;
+            margin-bottom: 15px;
+        }
+        
+        .timeline-icon {
+            background: #27ae60;
+            color: white;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+        
+        .timeline-content {
+            flex: 1;
+        }
+        
+        .timeline-title {
+            color: #2c3e50;
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 3px;
+        }
+        
+        .timeline-text {
+            color: #7f8c8d;
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="icon">✓</div>
+            <h1>Case Submitted Successfully!</h1>
+        </div>
+        
+        <div class="content">
+            <div class="status-badge">Status: Pending Review</div>
+            
+            <div class="message">
+                <p>Your land dispute case has been successfully submitted to the system. A dedicated officer in your region has been automatically assigned to handle your case.</p>
+            </div>
+            
+            <div class="case-info">
+                <div class="info-item">
+                    <span class="info-label">Case ID</span>
+                    <span class="info-value">#{{ case.id }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Case Title</span>
+                    <span class="info-value">{{ case.title }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Location</span>
+                    <span class="info-value">{{ case.location }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Region</span>
+                    <span class="info-value">{{ case.get_region_display }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Assigned Officer</span>
+                    <span class="info-value">
+                        {% if case.assigned_to %}
+                            {{ case.assigned_to.get_full_name }}
+                        {% else %}
+                            Pending Assignment
+                        {% endif %}
+                    </span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Submitted On</span>
+                    <span class="info-value">{{ case.created_at|date:"M d, Y g:i A" }}</span>
+                </div>
+            </div>
+            
+            <div class="timeline">
+                <h3 style="color: #2c3e50; margin-bottom: 15px;">What Happens Next?</h3>
+                <div class="timeline-item">
+                    <div class="timeline-icon">✓</div>
+                    <div class="timeline-content">
+                        <div class="timeline-title">Case Received</div>
+                        <div class="timeline-text">Your case has been registered in the system</div>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-icon">2</div>
+                    <div class="timeline-content">
+                        <div class="timeline-title">Officer Review</div>
+                        <div class="timeline-text">The assigned officer will review your case details</div>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-icon">3</div>
+                    <div class="timeline-content">
+                        <div class="timeline-title">Investigation</div>
+                        <div class="timeline-text">The case will be investigated and processed</div>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-icon">4</div>
+                    <div class="timeline-content">
+                        <div class="timeline-title">Resolution</div>
+                        <div class="timeline-text">Updates will be provided as your case progresses</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="btn-group">
+                <a href="{% url 'citizen_case_detail' case.id %}" class="btn btn-primary">
+                    <i class="fas fa-eye"></i> View Case Details
+                </a>
+                <a href="{% url 'citizen_dashboard' %}" class="btn btn-secondary">
+                    <i class="fas fa-home"></i> Go to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

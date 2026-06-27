@@ -1,0 +1,428 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Land Dispute Management System</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f7fa;
+        }
+        
+        .container {
+            display: flex;
+            min-height: 100vh;
+        }
+        
+        .sidebar {
+            width: 250px;
+            background: linear-gradient(180deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 30px 20px;
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .sidebar h2 {
+            font-size: 22px;
+            margin-bottom: 30px;
+            color: #3498db;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 15px;
+        }
+        
+        .sidebar a {
+            display: block;
+            color: white;
+            text-decoration: none;
+            padding: 12px 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            transition: all 0.3s;
+        }
+        
+        .sidebar a:hover {
+            background-color: #3498db;
+            padding-left: 25px;
+        }
+        
+        .sidebar a i {
+            margin-right: 10px;
+            width: 20px;
+        }
+        
+        .logout-btn {
+            margin-top: 40px;
+            background-color: #e74c3c !important;
+            border: none;
+            cursor: pointer;
+            text-align: left;
+        }
+        
+        .logout-btn:hover {
+            background-color: #c0392b !important;
+        }
+        
+        .main-content {
+            flex: 1;
+            margin-left: 250px;
+            padding: 30px;
+        }
+        
+        .header {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .header h1 {
+            color: #2c3e50;
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            color: #7f8c8d;
+            font-size: 14px;
+        }
+        
+        .user-info {
+            text-align: right;
+        }
+        
+        .user-info p {
+            color: #2c3e50;
+            margin: 5px 0;
+        }
+        
+        .filters {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .filters input[type="text"] {
+            padding: 10px 15px;
+            border: 2px solid #bdc3c7;
+            border-radius: 5px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        
+        .filters input[type="text"]:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+        
+        .filters a {
+            text-decoration: none;
+        }
+        
+        .filters button {
+            padding: 10px 20px;
+            border: 2px solid #bdc3c7;
+            background: white;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 500;
+            color: #2c3e50;
+        }
+        
+        .filters button:hover,
+        .filters button.active {
+            background: #3498db;
+            color: white;
+            border-color: #3498db;
+        }
+        
+        .case-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 20px;
+        }
+        
+        .case-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s;
+            border-left: 5px solid #3498db;
+        }
+        
+        .case-card:hover {
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            transform: translateY(-5px);
+        }
+        
+        .case-card.pending {
+            border-left-color: #f39c12;
+        }
+        
+        .case-card.in_progress {
+            border-left-color: #3498db;
+        }
+        
+        .case-card.resolved {
+            border-left-color: #27ae60;
+        }
+        
+        .case-card.escalated {
+            border-left-color: #e74c3c;
+        }
+        
+        .case-card h3 {
+            color: #2c3e50;
+            font-size: 18px;
+            margin-bottom: 15px;
+        }
+        
+        .case-info {
+            font-size: 13px;
+            margin: 8px 0;
+            color: #7f8c8d;
+        }
+        
+        .case-info strong {
+            color: #2c3e50;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin: 10px 0;
+        }
+        
+        .status-pending {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        
+        .status-in_progress {
+            background-color: #d1ecf1;
+            color: #0c5460;
+        }
+        
+        .status-resolved {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        .status-escalated {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        
+        .case-actions {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .case-actions a,
+        .case-actions button {
+            flex: 1;
+            padding: 10px;
+            text-align: center;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .view-btn-card {
+            background: #3498db;
+            color: white;
+        }
+        
+        .view-btn-card:hover {
+            background: #2980b9;
+        }
+        
+        .assign-btn {
+            background: #27ae60;
+            color: white;
+        }
+        
+        .assign-btn:hover {
+            background: #229954;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 50px 20px;
+            color: #7f8c8d;
+        }
+        
+        .empty-state i {
+            font-size: 48px;
+            margin-bottom: 20px;
+            color: #bdc3c7;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 32px;
+            font-weight: bold;
+            color: #3498db;
+        }
+        
+        .stat-label {
+            color: #7f8c8d;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <h2>⚖️ Land Dispute System</h2>
+            <a href="{% url 'dashboard' %}"><i class="fas fa-chart-line"></i> Dashboard</a>
+            <a href="{% url 'case_map' %}"><i class="fas fa-map-location-dot"></i> Case Map</a>
+            <a href="{% url 'settings' %}"><i class="fas fa-cog"></i> Settings</a>
+            <a href="{% url 'logout' %}" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="header">
+                <div>
+                    <h1>Dashboard</h1>
+                    <p>Manage land dispute cases efficiently</p>
+                </div>
+                <div class="user-info">
+                    <p><strong>Welcome, {{ user.first_name|default:user.username }}!</strong></p>
+                    <p style="font-size: 12px;">{{ user.email }}</p>
+                </div>
+            </div>
+            
+            <!-- Filters and Search -->
+            <div class="filters" style="flex-direction: column; gap: 15px;">
+                <!-- Search Bar -->
+                <div style="display: flex; gap: 10px; width: 100%;">
+                    <form method="GET" style="display: flex; gap: 10px; flex: 1;">
+                        <input type="text" name="search" placeholder="Search by case name or citizen name..." value="{{ search_query }}" style="flex: 1; padding: 10px 15px; border: 2px solid #bdc3c7; border-radius: 5px; font-size: 14px;">
+                        {% if filter_status != 'all' %}<input type="hidden" name="status" value="{{ filter_status }}">{% endif %}
+                        <button type="submit" style="padding: 10px 20px; background: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: 500;">
+                            <i class="fas fa-search"></i> Search
+                        </button>
+                    </form>
+                    <a href="{% url 'dashboard' %}" style="padding: 10px 20px; background: #95a5a6; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: 500; text-decoration: none; display: flex; align-items: center;">
+                        <i class="fas fa-redo"></i> Clear
+                    </a>
+                </div>
+                
+                <!-- Status Filters -->
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <a href="?search={{ search_query }}&status=all" style="text-decoration: none;">
+                        <button class="{% if filter_status == 'all' %}active{% endif %}">All Status</button>
+                    </a>
+                    <a href="?search={{ search_query }}&status=pending" style="text-decoration: none;">
+                        <button class="{% if filter_status == 'pending' %}active{% endif %}">Pending</button>
+                    </a>
+                    <a href="?search={{ search_query }}&status=in_progress" style="text-decoration: none;">
+                        <button class="{% if filter_status == 'in_progress' %}active{% endif %}">In Progress</button>
+                    </a>
+                    <a href="?search={{ search_query }}&status=resolved" style="text-decoration: none;">
+                        <button class="{% if filter_status == 'resolved' %}active{% endif %}">Resolved</button>
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Cases Grid -->
+            {% if cases %}
+            <div class="case-container">
+                {% for case in cases %}
+                <div class="case-card {{ case.status }}">
+                    <h3>{{ case.title }}</h3>
+                    
+                    <div class="case-info">
+                        <strong>Citizen:</strong> {{ case.citizen_name }}
+                    </div>
+                    
+                    <div class="case-info">
+                        <strong>Phone:</strong> {{ case.citizen_phone }}
+                    </div>
+                    
+                    <div class="case-info">
+                        <strong>Location:</strong> {{ case.location }}
+                    </div>
+                    
+                    <div class="case-info">
+                        <strong>Date:</strong> {{ case.created_at|date:"M d, Y" }}
+                    </div>
+                    
+                    <div class="case-info">
+                        <strong>Assigned to:</strong> {{ case.assigned_to.get_full_name|default:"Unassigned" }}
+                    </div>
+                    
+                    <span class="status-badge status-{{ case.status }}">{{ case.get_status_display }}</span>
+                    
+                    <div class="case-actions">
+                        <a href="{% url 'case_detail' case.id %}" class="view-btn-card">View Details</a>
+                        {% if not case.assigned_to %}
+                        <a href="{% url 'assign_case' case.id %}" class="assign-btn">Assign to Me</a>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <i class="fas fa-inbox"></i>
+                <h3>No cases found</h3>
+                <p>There are no cases matching your current filters.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <script src="{% static 'js/app.js' %}"></script>
+</body>
+</html>
