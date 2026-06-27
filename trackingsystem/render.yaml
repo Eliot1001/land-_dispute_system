@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: land-dispute-system
+    env: python
+    plan: free
+    buildCommand: "pip install -r requirements.txt && python manage.py migrate && python manage.py collectstatic --noinput"
+    startCommand: "gunicorn trackingsystem.wsgi:application"
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11"
+      - key: DEBUG
+        value: "False"
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ALLOWED_HOSTS
+        value: "yourdomain.onrender.com"
+databases:
+  - name: postgresql
+    plan: free
