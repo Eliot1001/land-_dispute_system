@@ -126,19 +126,19 @@ def case_detail(request, case_id):
     """View detailed case information"""
     case = get_object_or_404(Case, id=case_id)
     
-    # Check if user is authorized to view officer cases (officer, staff, or admin)
+    # Check if user is authorized to view this specific case
+    # Allow if: user is assigned to case, or user is admin/superuser
     can_view = False
-    try:
-        # User has an officer profile
-        officer = request.user.officer_profile
+    
+    # Check if user is admin/superuser (can view any case)
+    if request.user.is_superuser or (request.user.is_staff and request.user.is_active):
         can_view = True
-    except OfficerProfile.DoesNotExist:
-        # User is staff or admin
-        if request.user.is_staff:
-            can_view = True
+    # Check if user is assigned to this specific case
+    elif case.assigned_to == request.user:
+        can_view = True
     
     if not can_view:
-        return HttpResponseForbidden("You do not have permission to view this case. Only officers, staff members, and administrators can access this page.")
+        return HttpResponseForbidden("You do not have permission to view this case. Only the assigned officer or administrators can access this case.")
     
     if request.method == 'POST':
         case.notes = request.POST.get('notes', case.notes)
@@ -188,23 +188,23 @@ def assign_case(request, case_id):
 @login_required(login_url='login')
 def update_case_status(request, case_id):
     """Update case status via quick action buttons"""
-    # Check if user is authorized to update cases (officer, staff, or admin)
+    case = get_object_or_404(Case, id=case_id)
+    
+    # Check if user is authorized to update this specific case
+    # Only allow if: user is assigned to case, or user is admin/superuser
     can_update = False
-    try:
-        # User has an officer profile
-        officer = request.user.officer_profile
+    
+    # Check if user is admin/superuser (can update any case)
+    if request.user.is_superuser or (request.user.is_staff and request.user.is_active):
         can_update = True
-    except OfficerProfile.DoesNotExist:
-        # User is staff or admin
-        if request.user.is_staff:
-            can_update = True
+    # Check if user is assigned to this specific case
+    elif case.assigned_to == request.user:
+        can_update = True
     
     if not can_update:
-        return HttpResponseForbidden("You do not have permission to update this case. Only officers, staff members, and administrators can update case status.")
+        return HttpResponseForbidden("You do not have permission to update this case. Only the assigned officer or administrators can update case status.")
     
     if request.method == 'POST':
-        case = get_object_or_404(Case, id=case_id)
-        
         # Handle quick action buttons (name="status" with value)
         new_status = request.POST.get('status')
         
@@ -535,22 +535,6 @@ def download_document(request, document_id):
         return FileResponse(document.file.open('rb'), as_attachment=True, filename=document.file.name.split('/')[-1])
     else:
         return HttpResponseForbidden("Document file not found")
-
-
-@login_required(login_url='login')
-def case_detail(request, case_id):
-    """View case details for officer - handle updates and notes"""
-    case = get_object_or_404(Case, id=case_id)
-    
-    if request.method == 'POST':
-        case.notes = request.POST.get('notes', case.notes)
-        case.save()
-        return redirect('case_detail', case_id=case.id)
-    
-    context = {
-        'case': case,
-    }
-    return render(request, 'case_detail.html', context)
 
 
 @login_required(login_url='login')
