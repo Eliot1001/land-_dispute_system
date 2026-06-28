@@ -81,20 +81,21 @@
             position: fixed;
             top: 0;
             left: -100%;
-            width: 80%;
-            max-width: 300px;
+            width: 70%;
             height: 100vh;
             background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
             color: white;
             padding: 80px 20px 20px;
             z-index: 999;
-            transition: left 0.3s ease;
+            transition: left 0.3s ease-out;
             overflow-y: auto;
             box-shadow: 2px 0 15px rgba(0, 0, 0, 0.2);
+            visibility: hidden;
         }
         
         .mobile-menu.active {
             left: 0;
+            visibility: visible;
         }
         
         .mobile-menu a {
@@ -416,6 +417,10 @@
         <a href="{% url 'citizen_dashboard' %}"><i class="fas fa-home"></i> Dashboard</a>
         <a href="{% url 'submit_case' %}"><i class="fas fa-plus-circle"></i> Submit New Case</a>
         <a href="{% url 'citizen_profile' %}"><i class="fas fa-user-circle"></i> My Profile</a>
+        <a href="{% url 'citizen_logout' %}" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+    </div>
+    
+    <!-- Overlay -->
     <div class="overlay" id="overlay"></div>
     
     <!-- Main Content -->
