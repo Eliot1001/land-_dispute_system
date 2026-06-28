@@ -417,70 +417,31 @@
         }
         
         function getCurrentLocation() {
-            if (navigator.geolocation) {
-                const btn = document.querySelector('.btn-geo');
-                btn.disabled = true;
-                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Getting exact location...';
-                
-                let bestPosition = null;
-                let attempts = 0;
-                const maxAttempts = 3;
-                
-                function requestHighAccuracyLocation() {
-                    attempts++;
-                    
-                    navigator.geolocation.getCurrentPosition(
-                        function(position) {
-                            bestPosition = position;
-                            const lat = position.coords.latitude;
-                            const lng = position.coords.longitude;
-                            const accuracy = position.coords.accuracy;
-                            const altitude = position.coords.altitude;
-                            
-                            // Check accuracy - if less than 50m, use it; otherwise retry
-                            if (accuracy <= 50 || attempts >= maxAttempts) {
-                                updateLocation(lat, lng);
-                                btn.disabled = false;
-                                btn.innerHTML = '<i class="fas fa-location-arrow"></i> ✓ Location Pinned';
-                            } else {
-                                // Retry for better accuracy
-                                showMessage(`Refining location (Attempt ${attempts}/${maxAttempts}, Accuracy: ${Math.round(accuracy)}m)...`, 'success');
-                                setTimeout(requestHighAccuracyLocation, 1000);
-                            }
-                        },
-                        function(error) {
-                            handleLocationError(error, btn);
-                        },
-                        {
-                            timeout: 20000,
-                            enableHighAccuracy: true,
-                            maximumAge: 0
-                        }
-                    );
-                }
-                
-                requestHighAccuracyLocation();
-            } else {
-                showMessage('Geolocation is not supported by your browser. Please click on the map to select your location.', 'error');
+            if (!navigator.geolocation) {
+                alert("Geolocation is not supported.");
+                return;
             }
+
+            navigator.geolocation.getCurrentPosition(
+                function(position){
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+
+                    updateLocation(lat, lng);
+                },
+
+                function(error){
+                    alert(error.message);
+                },
+
+                {
+                    enableHighAccuracy:true,
+                    timeout:30000,
+                    maximumAge:0
+                }
+            );
         }
         
-        function handleLocationError(error, btn) {
-            let errorMsg = '📍 ';
-            if (error.code === error.PERMISSION_DENIED) {
-                errorMsg += 'Location permission denied. Please:\n1. Check browser permissions (look for location icon in address bar)\n2. Allow location access for this website\n3. Make sure Windows location services are enabled\n4. Try again';
-            } else if (error.code === error.POSITION_UNAVAILABLE) {
-                errorMsg += 'Location information is unavailable on this device. Please click on the map to select your location manually, or enable location services in your PC settings.';
-            } else if (error.code === error.TIMEOUT) {
-                errorMsg += 'Location request timed out. Make sure your location services are enabled and try again, or use the map to select location.';
-            } else {
-                errorMsg += 'Unable to get location: ' + (error.message || 'Unknown error');
-            }
-            
-            showMessage(errorMsg, 'error');
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fas fa-location-arrow"></i> Get My Current Location';
-        }
         
         // File upload handling
         const fileInput = document.getElementById('document');
