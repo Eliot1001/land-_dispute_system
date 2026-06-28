@@ -360,15 +360,8 @@
                     <input type="text" id="location" name="location" placeholder="District/Ward" required readonly>
                 </div>
                 
-                <div class="form-group" style="display:none;">
-                    <label for="latitude"><i class="fas fa-arrows-alt"></i> Latitude</label>
-                    <input type="number" id="latitude" name="latitude" placeholder="0.0000000" step="0.000001" readonly>
-                </div>
-                
-                <div class="form-group" style="display:none;">
-                    <label for="longitude"><i class="fas fa-arrows-alt"></i> Longitude</label>
-                    <input type="number" id="longitude" name="longitude" placeholder="0.0000000" step="0.000001" readonly>
-                </div>
+                <input type="hidden" id="latitude" name="latitude">
+                <input type="hidden" id="longitude" name="longitude">
                 
                 <div class="form-group">
                     <label for="title"><i class="fas fa-heading"></i> Dispute Title</label>
@@ -413,57 +406,55 @@
         document.addEventListener('DOMContentLoaded', initMap);
         
         function getCurrentLocation(btn) {
+            console.log('Getting location...');
             btn.disabled = true;
             btn.innerHTML = '<div class="loading-spinner"></div> Getting location...';
             
             if (!navigator.geolocation) {
-                alert('Geolocation not supported');
+                alert('❌ Geolocation not supported in your browser');
                 btn.disabled = false;
                 btn.innerHTML = '<i class="fas fa-location-arrow"></i> Get Location';
                 return;
             }
             
-            let attempts = 0;
-            const maxAttempts = 3;
-            
-            function getLocationWithRetry() {
-                navigator.geolocation.getCurrentPosition(
-                    function(position) {
-                        const lat = position.coords.latitude.toFixed(6);
-                        const lng = position.coords.longitude.toFixed(6);
-                        const accuracy = Math.round(position.coords.accuracy);
-                        
-                        updateLocation(lat, lng, accuracy);
-                        btn.disabled = false;
-                        btn.innerHTML = '<i class="fas fa-location-arrow"></i> Location Found ✓';
-                    },
-                    function(error) {
-                        console.error('Geolocation error:', error.code, error.message);
-                        attempts++;
-                        if (attempts < maxAttempts) {
-                            setTimeout(getLocationWithRetry, 1000);
-                        } else {
-                            let errorMsg = 'Could not get location.';
-                            if (error.code === 1) errorMsg += ' Permission denied. Enable location in browser settings.';
-                            else if (error.code === 2) errorMsg += ' Position unavailable.';
-                            else if (error.code === 3) errorMsg += ' Request timeout.';
-                            alert(errorMsg);
-                            btn.disabled = false;
-                            btn.innerHTML = '<i class="fas fa-location-arrow"></i> Get Location';
-                        }
-                    },
-                    {
-                        enableHighAccuracy: true,
-                        timeout: 20000,
-                        maximumAge: 0
+            navigator.geolocation.getCurrentPosition(
+                function(position) {
+                    console.log('Location captured:', position.coords);
+                    const lat = parseFloat(position.coords.latitude).toFixed(6);
+                    const lng = parseFloat(position.coords.longitude).toFixed(6);
+                    const accuracy = Math.round(position.coords.accuracy);
+                    
+                    updateLocation(lat, lng, accuracy, btn);
+                },
+                function(error) {
+                    console.error('Geolocation error:', error.code, error.message);
+                    let errorMsg = '❌ ';
+                    
+                    if (error.code === 1) {
+                        errorMsg += 'Location permission denied. Please:\n1. Check browser location settings\n2. Or use Manual entry below';
+                    } else if (error.code === 2) {
+                        errorMsg += 'Location unavailable. Check if GPS is enabled.';
+                    } else if (error.code === 3) {
+                        errorMsg += 'Location request timed out. Try again.';
+                    } else {
+                        errorMsg += 'Could not get location: ' + error.message;
                     }
-                );
-            }
-            
-            getLocationWithRetry();
+                    
+                    alert(errorMsg);
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-location-arrow"></i> Get Location';
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 30000,
+                    maximumAge: 0
+                }
+            );
         }
         
-        function updateLocation(lat, lng, accuracy) {
+        function updateLocation(lat, lng, accuracy, btn) {
+            console.log('Updating location:', lat, lng, accuracy);
+            
             document.getElementById('latitude').value = lat;
             document.getElementById('longitude').value = lng;
             document.getElementById('coords').textContent = `${lat}, ${lng}`;
@@ -487,11 +478,20 @@
             document.getElementById('accuracyBadge').textContent = badge;
             
             // Update map
-            if (marker) map.removeLayer(marker);
-            marker = L.marker([lat, lng]).addTo(map);
-            map.setView([lat, lng], 13);
+            if (map && marker) {
+                map.removeLayer(marker);
+            }
+            if (map) {
+                marker = L.marker([lat, lng]).addTo(map);
+                map.setView([lat, lng], 14);
+            }
             
             getDistrictFromCoordinates(lat, lng);
+            
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-location-arrow"></i> ✓ Location Found';
+            }
         }
         
         function getDistrictFromCoordinates(lat, lng) {
