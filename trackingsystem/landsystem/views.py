@@ -126,17 +126,19 @@ def case_detail(request, case_id):
     """View detailed case information"""
     case = get_object_or_404(Case, id=case_id)
     
-    # Check if user is an officer or admin (citizens cannot view officer dashboard cases)
-    is_officer_or_admin = False
+    # Check if user is authorized to view officer cases (officer, staff, or admin)
+    can_view = False
     try:
+        # User has an officer profile
         officer = request.user.officer_profile
-        is_officer_or_admin = True
+        can_view = True
     except OfficerProfile.DoesNotExist:
+        # User is staff or admin
         if request.user.is_staff:
-            is_officer_or_admin = True
+            can_view = True
     
-    if not is_officer_or_admin:
-        return HttpResponseForbidden("You do not have permission to view this case.")
+    if not can_view:
+        return HttpResponseForbidden("You do not have permission to view this case. Only officers, staff members, and administrators can access this page.")
     
     if request.method == 'POST':
         case.notes = request.POST.get('notes', case.notes)
@@ -184,20 +186,21 @@ def assign_case(request, case_id):
 
 
 @login_required(login_url='login')
-@login_required(login_url='login')
 def update_case_status(request, case_id):
     """Update case status via quick action buttons"""
-    # Check if user is an officer or admin
-    is_officer_or_admin = False
+    # Check if user is authorized to update cases (officer, staff, or admin)
+    can_update = False
     try:
+        # User has an officer profile
         officer = request.user.officer_profile
-        is_officer_or_admin = True
+        can_update = True
     except OfficerProfile.DoesNotExist:
+        # User is staff or admin
         if request.user.is_staff:
-            is_officer_or_admin = True
+            can_update = True
     
-    if not is_officer_or_admin:
-        return HttpResponseForbidden("You do not have permission to update this case. Only officers and administrators can update case status.")
+    if not can_update:
+        return HttpResponseForbidden("You do not have permission to update this case. Only officers, staff members, and administrators can update case status.")
     
     if request.method == 'POST':
         case = get_object_or_404(Case, id=case_id)
