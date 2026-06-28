@@ -13,6 +13,10 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 from pathlib import Path
 import os
 import dj_database_url
+try:
+    import psycopg2
+except ImportError:
+    pass
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -85,6 +89,18 @@ if os.environ.get('DATABASE_URL'):
     # Production: Render provides DATABASE_URL
     DATABASES = {
         'default': dj_database_url.config(default=os.environ.get('DATABASE_URL'), conn_max_age=600)
+    }
+elif os.environ.get('RENDER'):
+    # Render without DATABASE_URL - use PostgreSQL with internal env vars
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.environ.get('DB_NAME', 'postgres'),
+            'USER': os.environ.get('DB_USER', 'postgres'),
+            'PASSWORD': os.environ.get('DB_PASSWORD', ''),
+            'HOST': os.environ.get('DB_HOST', 'localhost'),
+            'PORT': os.environ.get('DB_PORT', '5432'),
+        }
     }
 else:
     # Local development: MySQL
