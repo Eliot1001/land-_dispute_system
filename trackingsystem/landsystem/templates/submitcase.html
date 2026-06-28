@@ -314,10 +314,10 @@
             <h3><i class="fas fa-map-location-dot"></i> Your Location</h3>
             <div id="map"></div>
             <div class="location-buttons">
-                <button class="btn-geo" onclick="getCurrentLocation()">
+                <button type="button" class="btn-geo" onclick="getCurrentLocation(this)">
                     <i class="fas fa-location-arrow"></i> Get Location
                 </button>
-                <button class="btn-geo" onclick="document.getElementById('latitude').focus()" style="border-color: #95a5a6; color: #95a5a6;">
+                <button type="button" class="btn-geo" onclick="document.getElementById('latitude').focus()" style="border-color: #95a5a6; color: #95a5a6;">
                     <i class="fas fa-pen"></i> Manual
                 </button>
             </div>
@@ -412,8 +412,7 @@
         
         document.addEventListener('DOMContentLoaded', initMap);
         
-        function getCurrentLocation() {
-            const btn = event.target.closest('.btn-geo');
+        function getCurrentLocation(btn) {
             btn.disabled = true;
             btn.innerHTML = '<div class="loading-spinner"></div> Getting location...';
             
@@ -439,11 +438,16 @@
                         btn.innerHTML = '<i class="fas fa-location-arrow"></i> Location Found ✓';
                     },
                     function(error) {
+                        console.error('Geolocation error:', error.code, error.message);
                         attempts++;
                         if (attempts < maxAttempts) {
                             setTimeout(getLocationWithRetry, 1000);
                         } else {
-                            alert('Could not get location. Please try again or enter manually.');
+                            let errorMsg = 'Could not get location.';
+                            if (error.code === 1) errorMsg += ' Permission denied. Enable location in browser settings.';
+                            else if (error.code === 2) errorMsg += ' Position unavailable.';
+                            else if (error.code === 3) errorMsg += ' Request timeout.';
+                            alert(errorMsg);
                             btn.disabled = false;
                             btn.innerHTML = '<i class="fas fa-location-arrow"></i> Get Location';
                         }
