@@ -407,19 +407,29 @@
         
         function getCurrentLocation(btn) {
             console.log('Getting location...');
+            
+            // First, ask user to allow location
+            const userConsent = confirm('📍 Allow access to your location?\n\n✓ Click OK\n✓ Then click ALLOW on the next prompt\n✓ We need this to pinpoint your dispute location');
+            
+            if (!userConsent) {
+                console.log('User cancelled location request');
+                return;
+            }
+            
             btn.disabled = true;
             btn.innerHTML = '<div class="loading-spinner"></div> Getting location...';
             
             if (!navigator.geolocation) {
-                alert('❌ Geolocation not supported in your browser');
+                alert('❌ Geolocation not supported in your browser\n\nTry:\n- Update your browser\n- Or use Manual entry below');
                 btn.disabled = false;
                 btn.innerHTML = '<i class="fas fa-location-arrow"></i> Get Location';
                 return;
             }
             
+            // Request location with high accuracy
             navigator.geolocation.getCurrentPosition(
                 function(position) {
-                    console.log('Location captured:', position.coords);
+                    console.log('✓ Location captured:', position.coords);
                     const lat = parseFloat(position.coords.latitude).toFixed(6);
                     const lng = parseFloat(position.coords.longitude).toFixed(6);
                     const accuracy = Math.round(position.coords.accuracy);
@@ -427,17 +437,17 @@
                     updateLocation(lat, lng, accuracy, btn);
                 },
                 function(error) {
-                    console.error('Geolocation error:', error.code, error.message);
+                    console.error('❌ Geolocation error:', error.code, error.message);
                     let errorMsg = '❌ ';
                     
                     if (error.code === 1) {
-                        errorMsg += 'Location permission denied. Please:\n1. Check browser location settings\n2. Or use Manual entry below';
+                        errorMsg = '🚫 Location Permission DENIED\n\n✓ On next try, click ALLOW on the permission prompt\n✓ Or check your browser settings:\n  - Settings → Privacy → Location → Allow\n✓ Or use Manual entry below';
                     } else if (error.code === 2) {
-                        errorMsg += 'Location unavailable. Check if GPS is enabled.';
+                        errorMsg += 'Position unavailable.\n\nTry:\n✓ Enable GPS on your phone\n✓ Or use Manual entry';
                     } else if (error.code === 3) {
-                        errorMsg += 'Location request timed out. Try again.';
+                        errorMsg += 'Location request timed out.\n\nTry:\n✓ Wait in open area (away from buildings)\n✓ Try again in a moment';
                     } else {
-                        errorMsg += 'Could not get location: ' + error.message;
+                        errorMsg += 'Error: ' + error.message;
                     }
                     
                     alert(errorMsg);
