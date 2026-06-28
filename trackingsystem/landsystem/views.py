@@ -127,15 +127,19 @@ def case_detail(request, case_id):
     case = get_object_or_404(Case, id=case_id)
     
     # Check if user is an officer or admin (citizens cannot view officer dashboard cases)
+    is_officer_or_admin = False
     try:
         officer = request.user.officer_profile
+        is_officer_or_admin = True
     except OfficerProfile.DoesNotExist:
-        if not request.user.is_staff:
-            return HttpResponseForbidden("You do not have permission to view this case.")
+        if request.user.is_staff:
+            is_officer_or_admin = True
+    
+    if not is_officer_or_admin:
+        return HttpResponseForbidden("You do not have permission to view this case.")
     
     if request.method == 'POST':
         case.notes = request.POST.get('notes', case.notes)
-        case.status = request.POST.get('status', case.status)
         case.assigned_to = request.user if request.POST.get('assign_to_me') else case.assigned_to
         case.save()
         return redirect('case_detail', case_id=case.id)
@@ -182,12 +186,18 @@ def assign_case(request, case_id):
 @login_required(login_url='login')
 @login_required(login_url='login')
 def update_case_status(request, case_id):
-    """Update case status via quick action buttons or POST"""
+    """Update case status via quick action buttons"""
+    # Check if user is an officer or admin
+    is_officer_or_admin = False
     try:
         officer = request.user.officer_profile
+        is_officer_or_admin = True
     except OfficerProfile.DoesNotExist:
-        if not request.user.is_staff:
-            return HttpResponseForbidden("You do not have permission to update this case.")
+        if request.user.is_staff:
+            is_officer_or_admin = True
+    
+    if not is_officer_or_admin:
+        return HttpResponseForbidden("You do not have permission to update this case. Only officers and administrators can update case status.")
     
     if request.method == 'POST':
         case = get_object_or_404(Case, id=case_id)
