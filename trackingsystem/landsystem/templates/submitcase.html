@@ -3,46 +3,511 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#007bff">
-    <meta name="description" content="Submit and track land disputes with location mapping">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#667eea">
+    <meta name="description" content="Submit land dispute with location mapping">
     <link rel="manifest" href="{% static 'manifest.json' %}">
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%23007bff' width='192' height='192'/><text x='96' y='110' font-size='80' font-weight='bold' fill='white' text-anchor='middle'>LD</text></svg>">
     <title>Submit Dispute</title>
-    <link rel="stylesheet" href="{% static 'css/submitcase.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        html, body {
+            height: 100%;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f7fa;
+        }
+        
+        .navbar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .navbar h1 {
+            font-size: 18px;
+            font-weight: 700;
+        }
+        
+        .back-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 5px 10px;
+        }
+        
+        .main-content {
+            margin-top: 70px;
+            padding: 20px;
+            min-height: calc(100vh - 70px);
+            overflow-y: auto;
+        }
+        
+        .header {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+        
+        .header h1 {
+            color: #2c3e50;
+            font-size: 22px;
+            margin-bottom: 5px;
+        }
+        
+        .header p {
+            color: #7f8c8d;
+            font-size: 13px;
+        }
+        
+        /* Map Section */
+        .map-section {
+            background: white;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+        
+        .map-section h3 {
+            color: #2c3e50;
+            font-size: 16px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        #map {
+            width: 100%;
+            height: 300px;
+            border-radius: 10px;
+            margin-bottom: 12px;
+        }
+        
+        .location-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .btn-geo {
+            flex: 1;
+            min-width: 140px;
+            padding: 12px;
+            border: 2px solid #667eea;
+            background: white;
+            border-radius: 10px;
+            color: #667eea;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.3s;
+            font-size: 14px;
+        }
+        
+        .btn-geo:active {
+            background: #667eea;
+            color: white;
+            transform: scale(0.98);
+        }
+        
+        .location-info {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 10px;
+            font-size: 13px;
+            color: #7f8c8d;
+            margin-top: 10px;
+        }
+        
+        .location-info strong {
+            color: #2c3e50;
+            display: block;
+            margin-bottom: 4px;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-top: 6px;
+        }
+        
+        .badge-high {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .badge-good {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+        
+        .badge-fair {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        /* Form Section */
+        .form-section {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+        
+        .form-section h3 {
+            color: #2c3e50;
+            font-size: 16px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .form-group {
+            margin-bottom: 16px;
+        }
+        
+        .form-group label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+            color: #2c3e50;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        .form-group label i {
+            color: #667eea;
+            width: 18px;
+        }
+        
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 14px;
+            border: 2px solid #ecf0f1;
+            border-radius: 10px;
+            font-size: 14px;
+            font-family: inherit;
+            transition: all 0.3s;
+        }
+        
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+        }
+        
+        .form-group textarea {
+            resize: none;
+            min-height: 100px;
+        }
+        
+        .btn-submit {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.3s;
+            margin-top: 10px;
+        }
+        
+        .btn-submit:active {
+            transform: scale(0.98);
+        }
+        
+        .loading-spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top: 2px solid white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 14px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border-left: 4px solid #155724;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .error-message {
+            background: #fee;
+            color: #c33;
+            padding: 14px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border-left: 4px solid #c33;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+    </style>
 </head>
-
 <body>
-
-<div class="form-box">
-
-    <h2>Submit Land Dispute</h2>
-
-    <input type="text" placeholder="Full Name">
-    <input type="text" placeholder="Phone Number">
-    <input type="text" placeholder="Location">
-
-    <input type="text" placeholder="Dispute Title">
-
-    <textarea placeholder="Describe the issue..."></textarea>
-
-    <button onclick="submitCase()">Submit</button>
-
-</div>
-
-<script src="{% static 'js/app.js' %}"></script>
-
-<!-- Service Worker Registration for PWA -->
-<script>
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('{% static "js/service-worker.js" %}')
-            .then(registration => {
-                console.log('Service Worker registered:', registration);
-            })
-            .catch(error => {
-                console.log('Service Worker registration failed:', error);
-            });
-    }
-</script>
+    <div class="navbar">
+        <h1>📝 Submit Dispute</h1>
+        <a href="{% url 'citizen_dashboard' %}" class="back-btn"><i class="fas fa-arrow-left"></i></a>
+    </div>
+    
+    <div class="main-content">
+        <!-- Header -->
+        <div class="header">
+            <h1>File a Land Dispute</h1>
+            <p>Provide accurate information and your location</p>
+        </div>
+        
+        <!-- Location/Map Section -->
+        <div class="map-section">
+            <h3><i class="fas fa-map-location-dot"></i> Your Location</h3>
+            <div id="map"></div>
+            <div class="location-buttons">
+                <button class="btn-geo" onclick="getCurrentLocation()">
+                    <i class="fas fa-location-arrow"></i> Get Location
+                </button>
+                <button class="btn-geo" onclick="document.getElementById('latitude').focus()" style="border-color: #95a5a6; color: #95a5a6;">
+                    <i class="fas fa-pen"></i> Manual
+                </button>
+            </div>
+            <div class="location-info" id="locationInfo" style="display:none;">
+                <strong id="districtName">📍 Location: <span id="district">-</span></strong>
+                <div>Coordinates: <span id="coords">-</span></div>
+                <div>Accuracy: <span id="accuracy">-</span></div>
+                <span class="badge" id="accuracyBadge">-</span>
+            </div>
+        </div>
+        
+        <!-- Form Section -->
+        <div class="form-section">
+            <h3><i class="fas fa-clipboard"></i> Case Details</h3>
+            
+            {% if messages %}
+            {% for message in messages %}
+            <div class="success-message">
+                <i class="fas fa-check-circle"></i>
+                <span>{{ message }}</span>
+            </div>
+            {% endfor %}
+            {% endif %}
+            
+            <form method="POST" id="caseForm">
+                {% csrf_token %}
+                
+                <div class="form-group">
+                    <label for="citizen_name"><i class="fas fa-user"></i> Full Name</label>
+                    <input type="text" id="citizen_name" name="citizen_name" placeholder="Your full name" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="citizen_phone"><i class="fas fa-phone"></i> Phone Number</label>
+                    <input type="tel" id="citizen_phone" name="citizen_phone" placeholder="0712345678" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="location"><i class="fas fa-map-pin"></i> Location Name</label>
+                    <input type="text" id="location" name="location" placeholder="District/Ward" required readonly>
+                </div>
+                
+                <div class="form-group" style="display:none;">
+                    <label for="latitude"><i class="fas fa-arrows-alt"></i> Latitude</label>
+                    <input type="number" id="latitude" name="latitude" placeholder="0.0000000" step="0.000001" readonly>
+                </div>
+                
+                <div class="form-group" style="display:none;">
+                    <label for="longitude"><i class="fas fa-arrows-alt"></i> Longitude</label>
+                    <input type="number" id="longitude" name="longitude" placeholder="0.0000000" step="0.000001" readonly>
+                </div>
+                
+                <div class="form-group">
+                    <label for="title"><i class="fas fa-heading"></i> Dispute Title</label>
+                    <input type="text" id="title" name="title" placeholder="Brief title of the dispute" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="description"><i class="fas fa-align-left"></i> Description</label>
+                    <textarea id="description" name="description" placeholder="Describe the issue in detail..." required></textarea>
+                </div>
+                
+                <button type="submit" class="btn-submit">
+                    <i class="fas fa-paper-plane"></i> Submit Case
+                </button>
+            </form>
+        </div>
+        <div style="height: 30px;"></div>
+    </div>
+    
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+    <script src="{% static 'js/app.js' %}"></script>
+    
+    <!-- Service Worker -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('{% static "js/service-worker.js" %}');
+        }
+        
+        // Map initialization
+        let map;
+        let marker;
+        
+        function initMap() {
+            map = L.map('map').setView([-6.8000, 39.2800], 7);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap',
+                maxZoom: 19
+            }).addTo(map);
+        }
+        
+        document.addEventListener('DOMContentLoaded', initMap);
+        
+        function getCurrentLocation() {
+            const btn = event.target.closest('.btn-geo');
+            btn.disabled = true;
+            btn.innerHTML = '<div class="loading-spinner"></div> Getting location...';
+            
+            if (!navigator.geolocation) {
+                alert('Geolocation not supported');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-location-arrow"></i> Get Location';
+                return;
+            }
+            
+            let attempts = 0;
+            const maxAttempts = 3;
+            
+            function getLocationWithRetry() {
+                navigator.geolocation.getCurrentPosition(
+                    function(position) {
+                        const lat = position.coords.latitude.toFixed(6);
+                        const lng = position.coords.longitude.toFixed(6);
+                        const accuracy = Math.round(position.coords.accuracy);
+                        
+                        updateLocation(lat, lng, accuracy);
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="fas fa-location-arrow"></i> Location Found ✓';
+                    },
+                    function(error) {
+                        attempts++;
+                        if (attempts < maxAttempts) {
+                            setTimeout(getLocationWithRetry, 1000);
+                        } else {
+                            alert('Could not get location. Please try again or enter manually.');
+                            btn.disabled = false;
+                            btn.innerHTML = '<i class="fas fa-location-arrow"></i> Get Location';
+                        }
+                    },
+                    {
+                        enableHighAccuracy: true,
+                        timeout: 20000,
+                        maximumAge: 0
+                    }
+                );
+            }
+            
+            getLocationWithRetry();
+        }
+        
+        function updateLocation(lat, lng, accuracy) {
+            document.getElementById('latitude').value = lat;
+            document.getElementById('longitude').value = lng;
+            document.getElementById('coords').textContent = `${lat}, ${lng}`;
+            document.getElementById('accuracy').textContent = `${accuracy}m`;
+            document.getElementById('locationInfo').style.display = 'block';
+            
+            let badge = '';
+            if (accuracy <= 10) {
+                badge = '🎯 Very High';
+                document.getElementById('accuracyBadge').className = 'badge badge-high';
+            } else if (accuracy <= 25) {
+                badge = '📍 High';
+                document.getElementById('accuracyBadge').className = 'badge badge-high';
+            } else if (accuracy <= 50) {
+                badge = '📌 Good';
+                document.getElementById('accuracyBadge').className = 'badge badge-good';
+            } else {
+                badge = '📍 Fair';
+                document.getElementById('accuracyBadge').className = 'badge badge-fair';
+            }
+            document.getElementById('accuracyBadge').textContent = badge;
+            
+            // Update map
+            if (marker) map.removeLayer(marker);
+            marker = L.marker([lat, lng]).addTo(map);
+            map.setView([lat, lng], 13);
+            
+            getDistrictFromCoordinates(lat, lng);
+        }
+        
+        function getDistrictFromCoordinates(lat, lng) {
+            const districts = {
+                'Makongo': {minLat: -6.95, maxLat: -6.85, minLng: 39.15, maxLng: 39.30, region: 'Dar es Salaam'},
+                'Kinondoni': {minLat: -6.80, maxLat: -6.70, minLng: 39.20, maxLng: 39.35, region: 'Dar es Salaam'},
+                'Ilala': {minLat: -6.85, maxLat: -6.75, minLng: 39.15, maxLng: 39.30, region: 'Dar es Salaam'},
+            };
+            
+            for (let district in districts) {
+                const d = districts[district];
+                if (lat >= d.minLat && lat <= d.maxLat && lng >= d.minLng && lng <= d.maxLng) {
+                    document.getElementById('location').value = `${district}, ${d.region}`;
+                    document.getElementById('district').textContent = `${district}, ${d.region}`;
+                    return;
+                }
+            }
+            document.getElementById('location').value = 'Dar es Salaam';
+            document.getElementById('district').textContent = 'Dar es Salaam';
+        }
+    </script>
 </body>
 </html>

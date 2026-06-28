@@ -3,7 +3,10 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#667eea">
+    <meta name="description" content="Land Dispute Management System - Register">
+    <link rel="manifest" href="{% static 'manifest.json' %}">
     <title>Citizen Registration - Land Dispute Management System</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
@@ -11,25 +14,32 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        html, body {
+            height: 100%;
         }
         
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 20px;
+            min-height: 100vh;
         }
         
         .container {
             background: white;
-            border-radius: 15px;
+            border-radius: 20px;
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
             overflow: hidden;
-            max-width: 500px;
+            max-width: 420px;
             width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
         }
         
         .header {
@@ -39,9 +49,15 @@
             text-align: center;
         }
         
+        .header .icon {
+            font-size: 40px;
+            margin-bottom: 10px;
+        }
+        
         .header h1 {
-            font-size: 32px;
+            font-size: 26px;
             margin-bottom: 5px;
+            font-weight: 700;
         }
         
         .header p {
@@ -50,74 +66,88 @@
         }
         
         .form-container {
-            padding: 30px;
+            padding: 30px 25px;
         }
         
         .form-group {
-            margin-bottom: 20px;
+            margin-bottom: 16px;
         }
         
         .form-group label {
-            display: block;
+            display: flex;
+            align-items: center;
+            gap: 8px;
             margin-bottom: 8px;
             color: #2c3e50;
             font-weight: 600;
-            font-size: 14px;
+            font-size: 13px;
         }
         
-        .form-group input {
-            width: 100%;
-            padding: 12px 15px;
-            border: 2px solid #ecf0f1;
-            border-radius: 8px;
-            font-size: 14px;
-            transition: all 0.3s;
-        }
-        
-        .form-group input:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        .form-group label i {
+            color: #667eea;
+            width: 16px;
         }
         
         .form-row {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 15px;
+            gap: 12px;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 12px 14px;
+            border: 2px solid #ecf0f1;
+            border-radius: 10px;
+            font-size: 14px;
+            transition: all 0.3s;
+            font-family: inherit;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
         }
         
         .btn-submit {
             width: 100%;
-            padding: 12px;
+            padding: 13px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
-            border-radius: 8px;
-            font-size: 16px;
+            border-radius: 10px;
+            font-size: 15px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s;
-            margin-top: 10px;
+            margin-top: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
         }
         
-        .btn-submit:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        .btn-submit:active {
+            transform: scale(0.98);
         }
         
         .error-message {
             background: #fee;
             color: #c33;
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            font-size: 14px;
+            padding: 13px;
+            border-radius: 10px;
+            margin-bottom: 18px;
+            font-size: 13px;
             border-left: 4px solid #c33;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
         
         .login-link {
             text-align: center;
-            margin-top: 20px;
+            margin-top: 18px;
             font-size: 14px;
             color: #7f8c8d;
         }
@@ -126,24 +156,27 @@
             color: #667eea;
             text-decoration: none;
             font-weight: 600;
+            transition: all 0.3s;
         }
         
-        .login-link a:hover {
-            text-decoration: underline;
+        .login-link a:active {
+            opacity: 0.8;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>⚖️ Register</h1>
-            <p>Create your citizen account</p>
+            <div class="icon">⚖️</div>
+            <h1>Create Account</h1>
+            <p>Join the citizen portal</p>
         </div>
         
         <div class="form-container">
             {% if error %}
             <div class="error-message">
-                <i class="fas fa-exclamation-circle"></i> {{ error }}
+                <i class="fas fa-exclamation-circle"></i>
+                <span>{{ error }}</span>
             </div>
             {% endif %}
             
@@ -153,48 +186,54 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label for="first_name"><i class="fas fa-user"></i> First Name</label>
-                        <input type="text" id="first_name" name="first_name" required>
+                        <input type="text" id="first_name" name="first_name" placeholder="First" required>
                     </div>
                     <div class="form-group">
                         <label for="last_name"><i class="fas fa-user"></i> Last Name</label>
-                        <input type="text" id="last_name" name="last_name" required>
+                        <input type="text" id="last_name" name="last_name" placeholder="Last" required>
                     </div>
                 </div>
                 
                 <div class="form-group">
                     <label for="email"><i class="fas fa-envelope"></i> Email</label>
-                    <input type="email" id="email" name="email" required>
+                    <input type="email" id="email" name="email" placeholder="your@email.com" required>
                 </div>
                 
                 <div class="form-group">
                     <label for="phone"><i class="fas fa-phone"></i> Phone Number</label>
-                    <input type="tel" id="phone" name="phone" placeholder="e.g., 0712345678" required>
+                    <input type="tel" id="phone" name="phone" placeholder="0712345678" required>
                 </div>
                 
                 <div class="form-group">
                     <label for="username"><i class="fas fa-at"></i> Username</label>
-                    <input type="text" id="username" name="username" required>
+                    <input type="text" id="username" name="username" placeholder="Choose username" required>
                 </div>
                 
                 <div class="form-group">
                     <label for="password"><i class="fas fa-lock"></i> Password</label>
-                    <input type="password" id="password" name="password" required>
+                    <input type="password" id="password" name="password" placeholder="Min. 6 characters" required>
                 </div>
                 
                 <div class="form-group">
-                    <label for="password_confirm"><i class="fas fa-lock"></i> Confirm Password</label>
-                    <input type="password" id="password_confirm" name="password_confirm" required>
+                    <label for="password_confirm"><i class="fas fa-lock"></i> Confirm</label>
+                    <input type="password" id="password_confirm" name="password_confirm" placeholder="Confirm password" required>
                 </div>
                 
                 <button type="submit" class="btn-submit">
-                    <i class="fas fa-user-plus"></i> Create Account
+                    <i class="fas fa-user-plus"></i> Register
                 </button>
             </form>
             
             <div class="login-link">
-                Already have an account? <a href="{% url 'citizen_login' %}">Login here</a>
+                Already registered? <a href="{% url 'citizen_login' %}">Login here</a>
             </div>
         </div>
     </div>
+    
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('{% static "js/service-worker.js" %}');
+        }
+    </script>
 </body>
 </html>

@@ -3,7 +3,10 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#667eea">
+    <meta name="description" content="Land Dispute Management System - Citizen Login">
+    <link rel="manifest" href="{% static 'manifest.json' %}">
     <title>Citizen Login - Land Dispute Management System</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
@@ -11,24 +14,29 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        html, body {
+            height: 100%;
         }
         
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 20px;
+            min-height: 100vh;
         }
         
         .container {
             background: white;
-            border-radius: 15px;
+            border-radius: 20px;
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
             overflow: hidden;
-            max-width: 450px;
+            max-width: 420px;
             width: 100%;
         }
         
@@ -39,9 +47,15 @@
             text-align: center;
         }
         
+        .header .icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+        
         .header h1 {
-            font-size: 36px;
-            margin-bottom: 10px;
+            font-size: 28px;
+            margin-bottom: 5px;
+            font-weight: 700;
         }
         
         .header p {
@@ -50,67 +64,81 @@
         }
         
         .form-container {
-            padding: 40px;
+            padding: 35px 25px;
         }
         
         .form-group {
-            margin-bottom: 20px;
+            margin-bottom: 18px;
         }
         
         .form-group label {
-            display: block;
+            display: flex;
+            align-items: center;
+            gap: 8px;
             margin-bottom: 8px;
             color: #2c3e50;
             font-weight: 600;
             font-size: 14px;
         }
         
+        .form-group label i {
+            color: #667eea;
+            width: 18px;
+        }
+        
         .form-group input {
             width: 100%;
-            padding: 12px 15px;
+            padding: 14px 15px;
             border: 2px solid #ecf0f1;
-            border-radius: 8px;
-            font-size: 14px;
+            border-radius: 10px;
+            font-size: 16px;
             transition: all 0.3s;
+            font-family: inherit;
         }
         
         .form-group input:focus {
             outline: none;
             border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
         }
         
         .btn-submit {
             width: 100%;
-            padding: 12px;
+            padding: 14px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
-            border-radius: 8px;
+            border-radius: 10px;
             font-size: 16px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s;
             margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
         }
         
-        .btn-submit:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        .btn-submit:active {
+            transform: scale(0.98);
         }
         
         .error-message {
             background: #fee;
             color: #c33;
-            padding: 12px;
-            border-radius: 8px;
+            padding: 14px;
+            border-radius: 10px;
             margin-bottom: 20px;
             font-size: 14px;
             border-left: 4px solid #c33;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
         
         .links {
-            margin-top: 20px;
+            margin-top: 25px;
             text-align: center;
             font-size: 14px;
             color: #7f8c8d;
@@ -121,17 +149,18 @@
             text-decoration: none;
             font-weight: 600;
             display: block;
-            margin-top: 10px;
+            padding: 10px 0;
+            transition: all 0.3s;
         }
         
-        .links a:hover {
-            text-decoration: underline;
+        .links a:active {
+            opacity: 0.8;
         }
         
         .demo-box {
             background: #f8f9fa;
-            padding: 15px;
-            border-radius: 8px;
+            padding: 16px;
+            border-radius: 10px;
             margin-top: 20px;
             border-left: 4px solid #667eea;
         }
@@ -139,28 +168,36 @@
         .demo-box h3 {
             font-size: 12px;
             color: #2c3e50;
-            margin-bottom: 8px;
+            margin-bottom: 10px;
             text-transform: uppercase;
+            font-weight: 700;
         }
         
         .demo-item {
             font-size: 13px;
             color: #7f8c8d;
-            margin: 5px 0;
+            margin: 6px 0;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .demo-item strong {
+            color: #667eea;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>⚖️</h1>
-            <p>Citizen Portal</p>
+            <div class="icon">⚖️</div>
+            <h1>Citizen Portal</h1>
+            <p>Submit and track your land disputes</p>
         </div>
         
         <div class="form-container">
             {% if error %}
             <div class="error-message">
-                <i class="fas fa-exclamation-circle"></i> {{ error }}
+                <i class="fas fa-exclamation-circle"></i>
+                <span>{{ error }}</span>
             </div>
             {% endif %}
             
@@ -168,7 +205,7 @@
                 {% csrf_token %}
                 
                 <div class="form-group">
-                    <label for="username"><i class="fas fa-at"></i> Username</label>
+                    <label for="username"><i class="fas fa-user"></i> Username</label>
                     <input type="text" id="username" name="username" placeholder="Enter your username" required autofocus>
                 </div>
                 
@@ -183,16 +220,22 @@
             </form>
             
             <div class="links">
-                <a href="{% url 'citizen_register' %}">Create a new account</a>
-                <a href="{% url 'login' %}">Officer Login</a>
+                <a href="{% url 'citizen_register' %}">Don't have an account? Register here</a>
+                <a href="{% url 'login' %}" style="font-size: 13px; color: #95a5a6;">Officer Login →</a>
             </div>
             
             <div class="demo-box">
-                <h3>Demo Citizen Credentials</h3>
+                <h3><i class="fas fa-info-circle"></i> Demo Credentials</h3>
                 <div class="demo-item"><strong>Username:</strong> citizen1</div>
                 <div class="demo-item"><strong>Password:</strong> password123</div>
             </div>
         </div>
     </div>
+    
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('{% static "js/service-worker.js" %}');
+        }
+    </script>
 </body>
 </html>
