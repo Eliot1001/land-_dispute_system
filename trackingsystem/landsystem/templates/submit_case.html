@@ -321,6 +321,9 @@
                 
                 <div class="form-group">
                     <label><i class="fas fa-map-pin"></i> Select Location on Map</label>
+                    <div class="info-box">
+                        <i class="fas fa-lightbulb"></i> <strong>Tip:</strong> Click the green button to use your phone's GPS, or simply click on the map to pin your location manually.
+                    </div>
                     <div id="map"></div>
                     <button type="button" class="btn-geo" onclick="getCurrentLocation()">
                         <i class="fas fa-location-arrow"></i> Get My Current Location
@@ -385,9 +388,12 @@
         });
         
         async function updateLocation(lat, lng) {
+            console.log('🗺️ updateLocation called with:', { lat, lng });
+            
             // Update hidden inputs with coordinates for backend
             document.getElementById('latitude').value = lat;
             document.getElementById('longitude').value = lng;
+            console.log('✅ Coordinates saved to form fields');
             
             // Remove old marker if exists
             if (marker) {
@@ -396,21 +402,30 @@
             
             // Add new marker to map
             marker = L.marker([lat, lng]).addTo(map);
+            console.log('📍 Marker added to map');
             
             // Smoothly animate map to marker with higher zoom
             map.flyTo([lat, lng], 19, {
                 animate: true,
                 duration: 2
             });
+            console.log('🎬 Map animation started');
             
             try {
                 // Use Nominatim reverse geocoding to get real address
+                console.log('🌐 Fetching address from Nominatim...');
                 const response = await fetch(
                     `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`
                 );
                 
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
                 const data = await response.json();
-                const address = data.address;
+                console.log('📬 Nominatim response:', data);
+                
+                const address = data.address || {};
                 
                 // Extract location components
                 const region = address.state || address.region || '';
@@ -425,6 +440,12 @@
                 if (district) fullLocation += district + ', ';
                 if (region) fullLocation += region;
                 
+                if (!fullLocation) {
+                    fullLocation = `Coordinates: ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+                }
+                
+                console.log('✍️ Full location:', fullLocation);
+                
                 // Update form field with real address
                 document.getElementById('detected-region').value = fullLocation;
                 
@@ -436,23 +457,24 @@
                     Longitude: ${lng.toFixed(6)}</small>
                 `).openPopup();
                 
-                console.log(`✓ LOCATION PINNED`);
-                console.log(`  Coordinates: ${lat}, ${lng}`);
-                console.log(`  Address: ${fullLocation}`);
+                console.log(`✅ LOCATION PINNED SUCCESSFULLY`);
+                showMessage(`✅ Location pinned!<br/><strong>📍 ${fullLocation}</strong>`, 'success');
                 
             } catch (error) {
                 // Fallback if geocoding fails
-                console.error('Geocoding error:', error);
-                document.getElementById('detected-region').value = `Latitude: ${lat}, Longitude: ${lng}`;
+                console.warn('⚠️ Geocoding failed:', error);
+                console.log('📍 Using coordinates as fallback');
+                
+                document.getElementById('detected-region').value = `Latitude: ${lat.toFixed(6)}, Longitude: ${lng.toFixed(6)}`;
                 
                 marker.bindPopup(`
                     <b>📍 Location Pinned</b><br/>
                     <small>Latitude: ${lat.toFixed(6)}<br/>
                     Longitude: ${lng.toFixed(6)}</small>
                 `).openPopup();
+                
+                showMessage(`✅ Location pinned!<br/><strong>📍 Coordinates saved</strong>`, 'success');
             }
-            
-            showMessage(`✓ Location pinned!<br/><strong>📍 Location detected</strong>`, 'success');
         }
         
         function showMessage(message, type = 'error') {
@@ -467,7 +489,10 @@
         }
         
         function getCurrentLocation() {
+            console.log('🔍 Starting location request...');
+            
             if (!navigator.geolocation) {
+                console.error('❌ Geolocation not supported');
                 showMessage('❌ Geolocation not supported by your browser. Please click on the map to select your location manually.', 'error');
                 return;
             }
@@ -475,44 +500,65 @@
             const btn = document.querySelector('.btn-geo');
             btn.disabled = true;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Requesting location...';
+            
+            console.log('📡 Requesting geolocation from device...');
 
             navigator.geolocation.getCurrentPosition(
-                function(position){
+                function(position) {
+                    console.log('✅ Position received:', position);
+                    
                     const lat = position.coords.latitude;
                     const lng = position.coords.longitude;
+                    const accuracy = position.coords.accuracy;
+                    
+                    console.log(`📍 Coordinates: ${lat}, ${lng}`);
+                    console.log(`📏 Accuracy: ${accuracy}m`);
 
                     updateLocation(lat, lng);
                     btn.disabled = false;
                     btn.innerHTML = '<i class="fas fa-location-arrow"></i> Get My Current Location';
                 },
 
-                function(error){
+                function(error) {
+                    console.error('❌ Geolocation error:', error);
+                    
                     btn.disabled = false;
                     btn.innerHTML = '<i class="fas fa-location-arrow"></i> Get My Current Location';
                     
                     let errorMsg = '';
+                    let errorCode = error.code;
                     
-                    if (error.code === error.PERMISSION_DENIED) {
-                        errorMsg = '📍 <strong>Location Permission Denied</strong><br/>To enable location:<br/>' +
-                                  '1. Check your browser\'s location permissions<br/>' +
-                                  '2. Allow location access for this site<br/>' +
-                                  '3. Alternatively, click on the map to select your location manually';
+                    if (errorCode === 1) { // PERMISSION_DENIED
+                        console.warn('Permission denied by user');
+                        errorMsg = '📍 <strong>Location Permission Denied</strong><br/>' +
+                                  'Steps to fix:<br/>' +
+                                  '1️⃣ Check your browser address bar for location icon<br/>' +
+                                  '2️⃣ Click it and select "Allow" for this site<br/>' +
+                                  '3️⃣ Try again<br/><br/>' +
+                                  '<em>Or simply click on the map to select location manually</em>';
                     } 
-                    else if (error.code === error.POSITION_UNAVAILABLE) {
-                        errorMsg = '📍 <strong>Location Unavailable</strong><br/>' +
-                                  '• Enable location services on your phone<br/>' +
-                                  '• Check WiFi/Mobile signal<br/>' +
-                                  '• Or click on the map to select manually';
+                    else if (errorCode === 2) { // POSITION_UNAVAILABLE
+                        console.warn('Position unavailable');
+                        errorMsg = '📍 <strong>Location Service Unavailable</strong><br/>' +
+                                  '• Enable GPS/Location on your phone<br/>' +
+                                  '• Ensure strong WiFi/Mobile signal<br/>' +
+                                  '• Wait a moment and try again<br/><br/>' +
+                                  '<em>Or click the map to select manually</em>';
                     } 
-                    else if (error.code === error.TIMEOUT) {
+                    else if (errorCode === 3) { // TIMEOUT
+                        console.warn('Location request timeout');
                         errorMsg = '📍 <strong>Location Request Timed Out</strong><br/>' +
-                                  '• Enable location services<br/>' +
-                                  '• Move to an open area with clear sky view<br/>' +
-                                  '• Or click on the map to select manually';
+                                  '⏱️ GPS is taking too long to respond<br/>' +
+                                  '• Move to open area (away from buildings)<br/>' +
+                                  '• Wait for GPS signal to lock<br/>' +
+                                  '• Try again in 5 seconds<br/><br/>' +
+                                  '<em>Or click the map to select manually</em>';
                     } 
                     else {
-                        errorMsg = '📍 <strong>Error Getting Location</strong><br/>' + error.message + 
-                                  '<br/>Please click on the map to select your location';
+                        console.error('Unknown error:', error.message);
+                        errorMsg = '📍 <strong>Unable to Get Location</strong><br/>' + 
+                                  'Error: ' + (error.message || 'Unknown') + 
+                                  '<br/><br/><em>Please click on the map to select your location manually</em>';
                     }
                     
                     showMessage(errorMsg, 'error');
