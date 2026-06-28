@@ -400,17 +400,22 @@ def submit_case(request):
         return redirect('citizen_login')
     
     if request.method == 'POST':
-        title = request.POST.get('title')
-        description = request.POST.get('description')
-        location = request.POST.get('location')
-        latitude = request.POST.get('latitude')
-        longitude = request.POST.get('longitude')
+        title = request.POST.get('title', '').strip()
+        description = request.POST.get('description', '').strip()
+        location = request.POST.get('detected_region', '').strip()  # Form field is named 'detected_region'
+        latitude = request.POST.get('latitude', '').strip()
+        longitude = request.POST.get('longitude', '').strip()
+        
+        # Validate required fields
+        if not all([title, description, location, latitude, longitude]):
+            error_msg = 'Please fill in all required fields (title, description, and location with coordinates)'
+            return render(request, 'submit_case.html', {'error': error_msg})
         
         try:
             lat = float(latitude)
             lng = float(longitude)
         except (ValueError, TypeError):
-            return render(request, 'submit_case.html', {'error': 'Invalid coordinates'})
+            return render(request, 'submit_case.html', {'error': 'Invalid coordinates. Please ensure location is properly pinned on the map.'})
         
         # Determine region from coordinates
         region = get_region_from_coordinates(lat, lng)
