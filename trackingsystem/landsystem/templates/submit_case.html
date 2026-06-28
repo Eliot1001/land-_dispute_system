@@ -350,8 +350,11 @@
             // Add new marker to map
             marker = L.marker([lat, lng]).addTo(map);
             
-            // Center map on marker with higher zoom
-            map.setView([lat, lng], 18);
+            // Smoothly animate map to marker with higher zoom
+            map.flyTo([lat, lng], 19, {
+                animate: true,
+                duration: 2
+            });
             
             try {
                 // Use Nominatim reverse geocoding to get real address
