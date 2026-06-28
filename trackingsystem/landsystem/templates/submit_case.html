@@ -280,28 +280,19 @@
                     </button>
                 </div>
                 
-                <div class="geo-info">
-                    <div class="geo-item">
-                        <label>Latitude</label>
-                        <input type="number" id="latitude" name="latitude" step="0.000001" readonly>
-                    </div>
-                    <div class="geo-item">
-                        <label>Longitude</label>
-                        <input type="number" id="longitude" name="longitude" step="0.000001" readonly>
-                    </div>
-                </div>
+              
+                
+                <!-- Hidden fields for coordinates (sent to backend) -->
+                <input type="hidden" id="latitude" name="latitude">
+                <input type="hidden" id="longitude" name="longitude">
                 
                 <div class="geo-info">
                     <div class="geo-item" style="grid-column: 1 / -1;">
-                        <label>🌍 Detected Region</label>
-                        <input type="text" id="detected-region" name="detected_region" readonly placeholder="Region will appear here">
+                        <label>🌍 Pinned Location</label>
+                        <input type="text" id="detected-region" name="detected_region" readonly placeholder="Click 'Get My Location' to pin your exact location here">
                     </div>
                 </div>
-                
-                <div class="form-group">
-                    <label for="location"><i class="fas fa-location-dot"></i> Location/Area Name</label>
-                    <input type="text" id="location" name="location" placeholder="e.g., Dodoma, Mbeya Region" required>
-                </div>
+               
                 
                 <div class="form-group">
                     <label for="document"><i class="fas fa-file-upload"></i> Upload Evidence (Optional)</label>
@@ -484,7 +475,7 @@
         });
         
         function updateLocation(lat, lng) {
-            // Update inputs with 6 decimal places for exact location
+            // Update hidden inputs with coordinates for backend
             document.getElementById('latitude').value = lat.toFixed(6);
             document.getElementById('longitude').value = lng.toFixed(6);
             
@@ -496,28 +487,36 @@
             
             document.getElementById('detected-region').value = displayLocation;
             
-            // Log for debugging and verification
-            console.log(`✓ EXACT LOCATION CAPTURED`);
-            console.log(`  Latitude: ${lat.toFixed(6)}`);
-            console.log(`  Longitude: ${lng.toFixed(6)}`);
-            console.log(`  Region: ${detectedRegion}`);
-            console.log(`  District: ${detectedDistrict}`);
-            console.log(`---`);
+            // Log for debugging
+            console.log(`✓ LOCATION PINNED`);
+            console.log(`  Coordinates: ${lat.toFixed(6)}, ${lng.toFixed(6)}`);
+            console.log(`  Location: ${displayLocation}`);
             
-            // Update marker
+            // Remove old marker and create new one
             if (marker) {
-                marker.setLatLng([lat, lng]);
-            } else {
-                marker = L.marker([lat, lng], {
-                    icon: L.divIcon({
-                        html: '<div style="background-color: #667eea; width: 35px; height: 35px; border-radius: 50%; border: 3px solid white; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 10px rgba(0,0,0,0.2);"><i style="color: white; font-size: 16px;" class="fas fa-map-pin"></i></div>',
-                        iconSize: [35, 35],
-                    })
-                }).addTo(map);
+                map.removeLayer(marker);
             }
             
-            map.setView([lat, lng], 12);
-            showMessage(`✓ Exact Coordinates: ${lat.toFixed(6)}, ${lng.toFixed(6)}<br/>📍 Location: <strong>${displayLocation}</strong>`, 'success');
+            // Create a prominent marker with popup showing the pinned location
+            marker = L.marker([lat, lng], {
+                icon: L.divIcon({
+                    html: '<div style="background-color: #667eea; width: 40px; height: 40px; border-radius: 50%; border: 4px solid white; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(0,0,0,0.3); font-size: 20px;">📍</div>',
+                    iconSize: [40, 40],
+                    className: 'custom-marker'
+                })
+            }).addTo(map);
+            
+            // Add popup to marker showing location details
+            marker.bindPopup(`<div style="text-align: center; padding: 10px;">
+                <strong>📍 Pinned Location</strong><br/>
+                ${displayLocation}<br/>
+                <small>${lat.toFixed(6)}, ${lng.toFixed(6)}</small>
+            </div>`, { offset: [0, -15] }).openPopup();
+            
+            // Center map on marker
+            map.setView([lat, lng], 14);
+            
+            showMessage(`✓ Location pinned!<br/><strong>📍 ${displayLocation}</strong>`, 'success');
         }
         
         function showMessage(message, type = 'error') {
@@ -555,17 +554,8 @@
                             // Check accuracy - if less than 50m, use it; otherwise retry
                             if (accuracy <= 50 || attempts >= maxAttempts) {
                                 updateLocation(lat, lng);
-                                const accuracyStatus = accuracy <= 10 ? '🎯 Very High' : 
-                                                      accuracy <= 25 ? '📍 High' : 
-                                                      accuracy <= 50 ? '📌 Good' : '📍 Fair';
-                                
-                                showMessage(`✓ EXACT Location Captured!<br/>
-                                    <strong>Latitude:</strong> ${lat.toFixed(6)}<br/>
-                                    <strong>Longitude:</strong> ${lng.toFixed(6)}<br/>
-                                    <strong>Accuracy:</strong> ${Math.round(accuracy)}m ${accuracyStatus}<br/>
-                                    ${altitude ? `<strong>Altitude:</strong> ${Math.round(altitude)}m` : ''}`, 'success');
                                 btn.disabled = false;
-                                btn.innerHTML = '<i class="fas fa-location-arrow"></i> Get My Current Location';
+                                btn.innerHTML = '<i class="fas fa-location-arrow"></i> ✓ Location Pinned';
                             } else {
                                 // Retry for better accuracy
                                 showMessage(`Refining location (Attempt ${attempts}/${maxAttempts}, Accuracy: ${Math.round(accuracy)}m)...`, 'success');
