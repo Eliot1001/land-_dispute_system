@@ -180,16 +180,29 @@ def assign_case(request, case_id):
 
 
 @login_required(login_url='login')
+@login_required(login_url='login')
 def update_case_status(request, case_id):
-    """Update case status"""
+    """Update case status via quick action buttons or POST"""
+    try:
+        officer = request.user.officer_profile
+    except OfficerProfile.DoesNotExist:
+        if not request.user.is_staff:
+            return HttpResponseForbidden("You do not have permission to update this case.")
+    
     if request.method == 'POST':
         case = get_object_or_404(Case, id=case_id)
+        
+        # Handle quick action buttons (name="status" with value)
         new_status = request.POST.get('status')
-        if new_status in dict(Case.STATUS_CHOICES):
+        
+        # Validate status against available choices
+        valid_statuses = [choice[0] for choice in Case.STATUS_CHOICES]
+        if new_status and new_status in valid_statuses:
             case.status = new_status
             case.save()
             return redirect('case_detail', case_id=case.id)
-    return redirect('dashboard')
+    
+    return redirect('case_detail', case_id=case_id)
 
 
 @login_required(login_url='login')
