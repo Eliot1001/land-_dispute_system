@@ -350,11 +350,6 @@
                     <input type="tel" id="citizen_phone" name="citizen_phone" placeholder="0712345678" required>
                 </div>
                 
-                <div class="form-group">
-                    <label for="location"><i class="fas fa-map-pin"></i> Location Name</label>
-                    <input type="text" id="location" name="location" placeholder="District/Ward" required readonly>
-                </div>
-                
                 <input type="hidden" id="latitude" name="latitude">
                 <input type="hidden" id="longitude" name="longitude">
                 
@@ -512,12 +507,10 @@
             for (let district in districts) {
                 const d = districts[district];
                 if (lat >= d.minLat && lat <= d.maxLat && lng >= d.minLng && lng <= d.maxLng) {
-                    document.getElementById('location').value = `${district}, ${d.region}`;
                     document.getElementById('district').textContent = `${district}, ${d.region}`;
                     return;
                 }
             }
-            document.getElementById('location').value = 'Dar es Salaam';
             document.getElementById('district').textContent = 'Dar es Salaam';
         }
     </script>
