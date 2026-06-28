@@ -162,13 +162,60 @@
         }
         
         .btn-geo {
-            background: #3498db;
+            background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
             color: white;
-            margin-top: 10px;
+            width: 100%;
+            padding: 16px 20px;
+            margin-top: 15px;
+            margin-bottom: 25px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(39, 174, 96, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            letter-spacing: 0.5px;
         }
         
         .btn-geo:hover {
-            background: #2980b9;
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(39, 174, 96, 0.4);
+            background: linear-gradient(135deg, #229954 0%, #1e8449 100%);
+        }
+        
+        .btn-geo:active {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 10px rgba(39, 174, 96, 0.3);
+        }
+        
+        .btn-geo:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .btn-geo i {
+            font-size: 18px;
+            animation: pulse-icon 1.5s infinite;
+        }
+        
+        .btn-geo:disabled i {
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes pulse-icon {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
         
         .error-message {
