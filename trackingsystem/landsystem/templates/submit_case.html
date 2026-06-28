@@ -320,143 +320,6 @@
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
     <script>
-        // Tanzania region and district boundaries (comprehensive and accurate)
-        // Based on actual administrative region GPS boundaries
-        const regions = {
-            // Northern region - around Arusha (covers northern area)
-            'Arusha': { 
-                minLat: -4.0, maxLat: -2.5, 
-                minLng: 34.5, maxLng: 37.5 
-            },
-            // Coastal region - Dar es Salaam (strictly coastal, eastern boundary)
-            'Dar es Salaam': { 
-                minLat: -7.3, maxLat: -6.5, 
-                minLng: 38.3, maxLng: 40.2 
-            },
-            // Central region - Dodoma (central Tanzania)
-            'Dodoma': { 
-                minLat: -6.4, maxLat: -4.9, 
-                minLng: 33.8, maxLng: 36.8 
-            },
-            // Southern highlands - Iringa
-            'Iringa': { 
-                minLat: -9.6, maxLat: -7.4, 
-                minLng: 33.5, maxLng: 36.5 
-            },
-            // Northwestern region - Kagera (near Lake Victoria)
-            'Kagera': { 
-                minLat: -2.9, maxLat: -0.8, 
-                minLng: 30.6, maxLng: 33.2 
-            },
-            // Southwestern region - Mbeya (southern highlands)
-            'Mbeya': { 
-                minLat: -9.5, maxLat: -8.2, 
-                minLng: 32.4, maxLng: 34.8 
-            },
-            // Lakeside region - Mwanza (near Lake Victoria, western)
-            'Mwanza': { 
-                minLat: -3.6, maxLat: -1.4, 
-                minLng: 31.0, maxLng: 34.4 
-            },
-            // Northeastern coastal - Tanga (coastal northeast, north of Dar)
-            'Tanga': { 
-                minLat: -6.3, maxLat: -4.1, 
-                minLng: 37.3, maxLng: 40.3 
-            }
-        };
-        
-        // District/Ward boundaries within regions for precise location detection
-        const districts = {
-            'Dar es Salaam': [
-                { name: 'Ilala', minLat: -6.8, maxLat: -6.75, minLng: 39.15, maxLng: 39.25 },
-                { name: 'Kinondoni', minLat: -6.7, maxLat: -6.5, minLng: 39.1, maxLng: 39.35 },
-                { name: 'Temeke', minLat: -7.0, maxLat: -6.85, minLng: 39.15, maxLng: 39.35 },
-                { name: 'Makongo', minLat: -6.95, maxLat: -6.8, minLng: 39.2, maxLng: 39.35 },
-                { name: 'Chalinze', minLat: -6.9, maxLat: -6.7, minLng: 39.0, maxLng: 39.25 }
-            ],
-            'Arusha': [
-                { name: 'Arusha Urban', minLat: -3.4, maxLat: -3.35, minLng: 36.65, maxLng: 36.75 },
-                { name: 'Arusha Rural', minLat: -3.5, maxLat: -3.3, minLng: 36.5, maxLng: 36.85 },
-                { name: 'Moshi', minLat: -3.35, maxLat: -3.3, minLng: 37.6, maxLng: 37.7 }
-            ],
-            'Dodoma': [
-                { name: 'Dodoma Urban', minLat: -6.2, maxLat: -6.15, minLng: 35.65, maxLng: 35.8 },
-                { name: 'Dodoma Rural', minLat: -6.3, maxLat: -6.1, minLng: 35.5, maxLng: 36.0 }
-            ],
-            'Iringa': [
-                { name: 'Iringa Urban', minLat: -8.8, maxLat: -8.75, minLng: 35.75, maxLng: 35.85 },
-                { name: 'Iringa Rural', minLat: -9.0, maxLat: -8.7, minLng: 35.5, maxLng: 36.2 }
-            ],
-            'Kagera': [
-                { name: 'Bukoba', minLat: -1.3, maxLat: -1.2, minLng: 31.8, maxLng: 31.95 },
-                { name: 'Muleba', minLat: -2.5, maxLat: -2.3, minLng: 31.5, maxLng: 31.8 }
-            ],
-            'Mbeya': [
-                { name: 'Mbeya Urban', minLat: -9.25, maxLat: -9.2, minLng: 33.45, maxLng: 33.55 },
-                { name: 'Mbeya Rural', minLat: -9.5, maxLat: -9.0, minLng: 33.0, maxLng: 34.0 }
-            ],
-            'Mwanza': [
-                { name: 'Mwanza Urban', minLat: -2.5, maxLat: -2.45, minLng: 32.9, maxLng: 33.0 },
-                { name: 'Mwanza Rural', minLat: -3.0, maxLat: -2.3, minLng: 32.5, maxLng: 33.3 }
-            ],
-            'Tanga': [
-                { name: 'Tanga Urban', minLat: -5.1, maxLat: -5.05, minLng: 39.15, maxLng: 39.25 },
-                { name: 'Tanga Rural', minLat: -5.3, maxLat: -4.9, minLng: 39.0, maxLng: 39.4 }
-            ]
-        };
-        
-        function getDistrictFromCoordinates(lat, lng, region) {
-            // Check if region has districts defined
-            if (districts[region]) {
-                for (const district of districts[region]) {
-                    if (lat >= district.minLat && lat <= district.maxLat && 
-                        lng >= district.minLng && lng <= district.maxLng) {
-                        return district.name;
-                    }
-                }
-                // If no exact match, return region name
-                return region;
-            }
-            return region;
-        }
-        
-        function getRegionFromCoordinates(lat, lng) {
-            // First pass: check exact boundary match
-            for (const [region, bounds] of Object.entries(regions)) {
-                if (lat >= bounds.minLat && lat <= bounds.maxLat && 
-                    lng >= bounds.minLng && lng <= bounds.maxLng) {
-                    return region;
-                }
-            }
-            
-            // Second pass: find closest region center if no exact match
-            let closestRegion = 'Unknown Region';
-            let shortestDistance = Infinity;
-            
-            for (const [region, bounds] of Object.entries(regions)) {
-                const centerLat = (bounds.minLat + bounds.maxLat) / 2;
-                const centerLng = (bounds.minLng + bounds.maxLng) / 2;
-                
-                // Calculate distance using Haversine formula for accuracy
-                const R = 6371; // Earth's radius in km
-                const dLat = (lat - centerLat) * Math.PI / 180;
-                const dLng = (lng - centerLng) * Math.PI / 180;
-                const a = 
-                    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-                    Math.cos(centerLat * Math.PI / 180) * Math.cos(lat * Math.PI / 180) *
-                    Math.sin(dLng / 2) * Math.sin(dLng / 2);
-                const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-                const distance = R * c;
-                
-                if (distance < shortestDistance) {
-                    shortestDistance = distance;
-                    closestRegion = region;
-                }
-            }
-            
-            return closestRegion;
-        }
-        
         // Initialize map
         const map = L.map('map').setView([-6.3690, 34.8888], 8);
         
@@ -474,49 +337,72 @@
             updateLocation(lat, lng);
         });
         
-        function updateLocation(lat, lng) {
+        async function updateLocation(lat, lng) {
             // Update hidden inputs with coordinates for backend
-            document.getElementById('latitude').value = lat.toFixed(6);
-            document.getElementById('longitude').value = lng.toFixed(6);
+            document.getElementById('latitude').value = lat;
+            document.getElementById('longitude').value = lng;
             
-            // Detect region and district
-            const detectedRegion = getRegionFromCoordinates(lat, lng);
-            const detectedDistrict = getDistrictFromCoordinates(lat, lng, detectedRegion);
-            const displayLocation = detectedDistrict !== detectedRegion ? 
-                `${detectedDistrict}, ${detectedRegion}` : detectedRegion;
-            
-            document.getElementById('detected-region').value = displayLocation;
-            
-            // Log for debugging
-            console.log(`✓ LOCATION PINNED`);
-            console.log(`  Coordinates: ${lat.toFixed(6)}, ${lng.toFixed(6)}`);
-            console.log(`  Location: ${displayLocation}`);
-            
-            // Remove old marker and create new one
+            // Remove old marker if exists
             if (marker) {
                 map.removeLayer(marker);
             }
             
-            // Create a prominent marker with popup showing the pinned location
-            marker = L.marker([lat, lng], {
-                icon: L.divIcon({
-                    html: '<div style="background-color: #667eea; width: 40px; height: 40px; border-radius: 50%; border: 4px solid white; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(0,0,0,0.3); font-size: 20px;">📍</div>',
-                    iconSize: [40, 40],
-                    className: 'custom-marker'
-                })
-            }).addTo(map);
+            // Add new marker to map
+            marker = L.marker([lat, lng]).addTo(map);
             
-            // Add popup to marker showing location details
-            marker.bindPopup(`<div style="text-align: center; padding: 10px;">
-                <strong>📍 Pinned Location</strong><br/>
-                ${displayLocation}<br/>
-                <small>${lat.toFixed(6)}, ${lng.toFixed(6)}</small>
-            </div>`, { offset: [0, -15] }).openPopup();
+            // Center map on marker with higher zoom
+            map.setView([lat, lng], 18);
             
-            // Center map on marker
-            map.setView([lat, lng], 14);
+            try {
+                // Use Nominatim reverse geocoding to get real address
+                const response = await fetch(
+                    `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`
+                );
+                
+                const data = await response.json();
+                const address = data.address;
+                
+                // Extract location components
+                const region = address.state || address.region || '';
+                const district = address.county || address.city || address.town || '';
+                const ward = address.suburb || address.village || '';
+                const street = address.road || '';
+                
+                // Build full location string
+                let fullLocation = '';
+                if (street) fullLocation += street + ', ';
+                if (ward) fullLocation += ward + ', ';
+                if (district) fullLocation += district + ', ';
+                if (region) fullLocation += region;
+                
+                // Update form field with real address
+                document.getElementById('detected-region').value = fullLocation;
+                
+                // Add popup to marker with address details
+                marker.bindPopup(`
+                    <b>📍 Your Exact Location</b><br/>
+                    ${fullLocation}<br/><br/>
+                    <small>Latitude: ${lat.toFixed(6)}<br/>
+                    Longitude: ${lng.toFixed(6)}</small>
+                `).openPopup();
+                
+                console.log(`✓ LOCATION PINNED`);
+                console.log(`  Coordinates: ${lat}, ${lng}`);
+                console.log(`  Address: ${fullLocation}`);
+                
+            } catch (error) {
+                // Fallback if geocoding fails
+                console.error('Geocoding error:', error);
+                document.getElementById('detected-region').value = `Latitude: ${lat}, Longitude: ${lng}`;
+                
+                marker.bindPopup(`
+                    <b>📍 Location Pinned</b><br/>
+                    <small>Latitude: ${lat.toFixed(6)}<br/>
+                    Longitude: ${lng.toFixed(6)}</small>
+                `).openPopup();
+            }
             
-            showMessage(`✓ Location pinned!<br/><strong>📍 ${displayLocation}</strong>`, 'success');
+            showMessage(`✓ Location pinned!<br/><strong>📍 Location detected</strong>`, 'success');
         }
         
         function showMessage(message, type = 'error') {
