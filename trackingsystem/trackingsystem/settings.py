@@ -24,9 +24,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-1)18lw*ebpifk*b=j+3bz0!x2=qe-z@3aytnxgn70_wv!ov&bb')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DEBUG', 'True') == 'True'
+DEBUG = False
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = [
+    "land-dispute-system-ghgp.onrender.com",
+    "localhost",
+    "127.0.0.1",
+]
 
 
 # Application definition
