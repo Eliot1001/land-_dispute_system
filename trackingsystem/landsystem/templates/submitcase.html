@@ -141,24 +141,26 @@
             background: #f8f9fa;
             padding: 12px;
             border-radius: 10px;
-            font-size: 13px;
-            color: #7f8c8d;
+            font-size: 14px;
+            color: #2c3e50;
             margin-top: 10px;
+            display: none;
         }
         
         .location-info strong {
-            color: #2c3e50;
+            color: #667eea;
             display: block;
-            margin-bottom: 4px;
+            margin-bottom: 6px;
+            font-size: 16px;
         }
         
         .badge {
             display: inline-block;
-            padding: 4px 8px;
+            padding: 6px 10px;
             border-radius: 12px;
-            font-size: 11px;
+            font-size: 12px;
             font-weight: 600;
-            margin-top: 6px;
+            margin-top: 8px;
         }
         
         .badge-high {
@@ -270,30 +272,6 @@
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
-        
-        .success-message {
-            background: #d4edda;
-            color: #155724;
-            padding: 14px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            border-left: 4px solid #155724;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .error-message {
-            background: #fee;
-            color: #c33;
-            padding: 14px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            border-left: 4px solid #c33;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
     </style>
 </head>
 <body>
@@ -306,36 +284,27 @@
         <!-- Header -->
         <div class="header">
             <h1>File a Land Dispute</h1>
-            <p>Provide accurate information and your location</p>
+            <p>Pinpoint your location and provide details</p>
         </div>
         
         <!-- Location/Map Section -->
         <div class="map-section">
-            <h3><i class="fas fa-map-location-dot"></i> Your Location</h3>
+            <h3><i class="fas fa-map-location-dot"></i> Mark Your Location</h3>
             <div id="map"></div>
             <div class="location-buttons">
                 <button type="button" class="btn-geo" onclick="getCurrentLocation(this)">
                     <i class="fas fa-location-arrow"></i> Get My Location
                 </button>
             </div>
-            <div class="location-info" id="locationInfo" style="display:none;">
-                <strong id="districtName">📍 <span id="district">-</span></strong>
-                <span class="badge" id="accuracyBadge">-</span>
+            <div class="location-info" id="locationInfo">
+                <strong>📍 <span id="district">Your location will appear here</span></strong>
+                <span class="badge" id="accuracyBadge"></span>
             </div>
         </div>
         
         <!-- Form Section -->
         <div class="form-section">
             <h3><i class="fas fa-clipboard"></i> Case Details</h3>
-            
-            {% if messages %}
-            {% for message in messages %}
-            <div class="success-message">
-                <i class="fas fa-check-circle"></i>
-                <span>{{ message }}</span>
-            </div>
-            {% endfor %}
-            {% endif %}
             
             <form method="POST" id="caseForm">
                 {% csrf_token %}
@@ -373,7 +342,6 @@
     
     <!-- Scripts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-    <script src="{% static 'js/app.js' %}"></script>
     
     <!-- Service Worker -->
     <script>
@@ -398,8 +366,7 @@
         function getCurrentLocation(btn) {
             console.log('🔍 Getting real-time location...');
             
-            // Confirmation dialog
-            const userConsent = confirm('📍 Use your GPS location?\n\n✓ Click OK\n✓ Then click ALLOW on browser prompt\n✓ This will capture your exact location for the dispute');
+            const userConsent = confirm('📍 Use your GPS location?\n\n✓ Click OK\n✓ Then click ALLOW on browser prompt');
             
             if (!userConsent) {
                 console.log('User cancelled location request');
@@ -410,16 +377,15 @@
             btn.innerHTML = '<div class="loading-spinner"></div> Getting location...';
             
             if (!navigator.geolocation) {
-                alert('❌ Geolocation not supported in your browser\n\nTry:\n- Update your browser\n- Or try a different browser');
+                alert('❌ Geolocation not supported');
                 btn.disabled = false;
                 btn.innerHTML = '<i class="fas fa-location-arrow"></i> Get My Location';
                 return;
             }
             
-            // Request real-time location with high accuracy
             navigator.geolocation.getCurrentPosition(
                 function(position) {
-                    console.log('✓ Real-time location captured:', position.coords);
+                    console.log('✓ Location captured:', position.coords);
                     const lat = parseFloat(position.coords.latitude).toFixed(6);
                     const lng = parseFloat(position.coords.longitude).toFixed(6);
                     const accuracy = Math.round(position.coords.accuracy);
@@ -427,20 +393,12 @@
                     updateLocation(lat, lng, accuracy, btn);
                 },
                 function(error) {
-                    console.error('❌ Location error:', error.code, error.message);
-                    let errorMsg = '❌ ';
-                    
-                    if (error.code === 1) {
-                        errorMsg = '🚫 Permission DENIED\n\n✓ Click "Get My Location" again\n✓ Click ALLOW on the browser prompt\n✓ Make sure location is enabled in browser settings';
-                    } else if (error.code === 2) {
-                        errorMsg += 'Your position is unavailable.\n\n✓ Enable GPS on your phone\n✓ Move to open area (away from buildings)\n✓ Try again';
-                    } else if (error.code === 3) {
-                        errorMsg += 'Location request timed out.\n\n✓ Move to area with GPS signal\n✓ Try again';
-                    } else {
-                        errorMsg += 'Error: ' + error.message;
-                    }
-                    
-                    alert(errorMsg);
+                    console.error('❌ Error:', error.code, error.message);
+                    let msg = '❌ Could not get location';
+                    if (error.code === 1) msg += ' - Permission denied';
+                    if (error.code === 2) msg += ' - Position unavailable';
+                    if (error.code === 3) msg += ' - Timeout';
+                    alert(msg);
                     btn.disabled = false;
                     btn.innerHTML = '<i class="fas fa-location-arrow"></i> Get My Location';
                 },
@@ -453,16 +411,12 @@
         }
         
         function updateLocation(lat, lng, accuracy, btn) {
-            console.log('✓ Location captured - Lat:', lat, 'Lng:', lng, 'Accuracy:', accuracy);
+            console.log('✓ Updating location:', lat, lng, accuracy);
             
-            // Store coordinates in hidden fields (for backend submission)
             document.getElementById('latitude').value = lat;
             document.getElementById('longitude').value = lng;
-            
-            // Display only district and accuracy to user
             document.getElementById('locationInfo').style.display = 'block';
             
-            // Accuracy badge
             let badge = '';
             if (accuracy <= 10) {
                 badge = '🎯 Very High Accuracy';
@@ -479,35 +433,34 @@
             }
             document.getElementById('accuracyBadge').textContent = badge;
             
-            // Update map
+            // Update map with marker
             if (map && marker) {
                 map.removeLayer(marker);
             }
             if (map) {
-                marker = L.marker([lat, lng]).addTo(map);
-                map.setView([lat, lng], 14);
+                marker = L.marker([lat, lng]).addTo(map).bindPopup(`📍 Your Dispute Location<br>Accuracy: ${accuracy}m`);
+                map.setView([lat, lng], 15);
+                marker.openPopup();
             }
             
-            // Get and display district
+            // Get district
             getDistrictFromCoordinates(lat, lng);
             
-            if (btn) {
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fas fa-location-arrow"></i> ✓ Location Found';
-            }
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-location-arrow"></i> ✓ Location Set';
         }
         
         function getDistrictFromCoordinates(lat, lng) {
             const districts = {
-                'Makongo': {minLat: -6.95, maxLat: -6.85, minLng: 39.15, maxLng: 39.30, region: 'Dar es Salaam'},
-                'Kinondoni': {minLat: -6.80, maxLat: -6.70, minLng: 39.20, maxLng: 39.35, region: 'Dar es Salaam'},
-                'Ilala': {minLat: -6.85, maxLat: -6.75, minLng: 39.15, maxLng: 39.30, region: 'Dar es Salaam'},
+                'Makongo': {minLat: -6.95, maxLat: -6.85, minLng: 39.15, maxLng: 39.30},
+                'Kinondoni': {minLat: -6.80, maxLat: -6.70, minLng: 39.20, maxLng: 39.35},
+                'Ilala': {minLat: -6.85, maxLat: -6.75, minLng: 39.15, maxLng: 39.30},
             };
             
             for (let district in districts) {
                 const d = districts[district];
                 if (lat >= d.minLat && lat <= d.maxLat && lng >= d.minLng && lng <= d.maxLng) {
-                    document.getElementById('district').textContent = `${district}, ${d.region}`;
+                    document.getElementById('district').textContent = `${district}, Dar es Salaam`;
                     return;
                 }
             }
