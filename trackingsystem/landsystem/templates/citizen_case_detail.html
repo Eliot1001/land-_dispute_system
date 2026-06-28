@@ -576,6 +576,37 @@
             </div>
         </div>
         
+        <!-- Status Notification Banner -->
+        {% if case.status == 'in_progress' %}
+        <div style="background: linear-gradient(135deg, rgba(52, 152, 219, 0.15) 0%, rgba(52, 152, 219, 0.05) 100%); border-left: 4px solid #3498db; padding: 15px 20px; border-radius: 8px; margin-bottom: 20px; display: flex; align-items: center; gap: 12px; box-shadow: 0 2px 8px rgba(52, 152, 219, 0.1);">
+            <div style="font-size: 24px;">⚙️</div>
+            <div>
+                <div style="font-weight: 700; color: #2c3e50; font-size: 14px;">Your Case is Being Processed</div>
+                <div style="font-size: 12px; color: #7f8c8d; margin-top: 3px;">Our officer is actively working on your case. Check back soon for updates.</div>
+            </div>
+        </div>
+        {% endif %}
+        
+        {% if case.status == 'escalated' %}
+        <div style="background: linear-gradient(135deg, rgba(231, 76, 60, 0.15) 0%, rgba(231, 76, 60, 0.05) 100%); border-left: 4px solid #e74c3c; padding: 15px 20px; border-radius: 8px; margin-bottom: 20px; display: flex; align-items: center; gap: 12px; box-shadow: 0 2px 8px rgba(231, 76, 60, 0.1);">
+            <div style="font-size: 24px;">⬆️</div>
+            <div>
+                <div style="font-weight: 700; color: #2c3e50; font-size: 14px;">Case Escalated to Higher Authority</div>
+                <div style="font-size: 12px; color: #7f8c8d; margin-top: 3px;">This case requires higher-level review and decision-making.</div>
+            </div>
+        </div>
+        {% endif %}
+        
+        {% if case.status == 'resolved' %}
+        <div style="background: linear-gradient(135deg, rgba(39, 174, 96, 0.15) 0%, rgba(39, 174, 96, 0.05) 100%); border-left: 4px solid #27ae60; padding: 15px 20px; border-radius: 8px; margin-bottom: 20px; display: flex; align-items: center; gap: 12px; box-shadow: 0 2px 8px rgba(39, 174, 96, 0.1);">
+            <div style="font-size: 24px;">✅</div>
+            <div>
+                <div style="font-weight: 700; color: #2c3e50; font-size: 14px;">Your Case Has Been Resolved</div>
+                <div style="font-size: 12px; color: #7f8c8d; margin-top: 3px;">Thank you for using our service. If you have questions, contact our support team.</div>
+            </div>
+        </div>
+        {% endif %}
+        
         <!-- Quick Info Grid -->
         <div class="info-grid">
             <div class="info-card">
@@ -642,8 +673,8 @@
                     <div class="progress-dot">{% if case.assigned_to %}✓{% else %}2{% endif %}</div>
                     <div class="progress-label">Assigned</div>
                 </div>
-                <div class="progress-step {% if case.status != 'pending' and case.status != 'escalated' %}{% if case.status == 'resolved' %}completed{% else %}active{% endif %}{% endif %}">
-                    <div class="progress-dot">{% if case.status == 'resolved' %}✓{% else %}3{% endif %}</div>
+                <div class="progress-step {% if case.status == 'in_progress' or case.status == 'escalated' %}active{% elif case.status == 'resolved' %}completed{% endif %}">
+                    <div class="progress-dot">{% if case.status == 'resolved' %}✓{% elif case.status == 'in_progress' or case.status == 'escalated' %}⚙️{% else %}3{% endif %}</div>
                     <div class="progress-label">Processing</div>
                 </div>
                 <div class="progress-step {% if case.status == 'resolved' %}completed{% endif %}">
