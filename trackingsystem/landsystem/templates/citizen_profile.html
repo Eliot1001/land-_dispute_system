@@ -336,13 +336,26 @@
             <!-- Action Buttons -->
             <div class="button-group">
                 <a href="{% url 'citizen_dashboard' %}" class="btn-cancel">
-                    <i class="fas fa-times"></i> Cancel
+                    <i class="fas fa-arrow-left"></i> Back
                 </a>
                 <button type="submit" class="btn-save">
-                    <i class="fas fa-save"></i> Save Changes
+                    <i class="fas fa-save"></i> Save
                 </button>
             </div>
         </form>
+        
+        <!-- Logout Section -->
+        <div class="profile-card" style="margin-top: 20px;">
+            <h3 style="color: #e74c3c; font-size: 16px; display: flex; align-items: center; gap: 10px;">
+                <i class="fas fa-sign-out-alt"></i> Sign Out
+            </h3>
+            <p style="color: #7f8c8d; font-size: 13px; margin-bottom: 15px;">
+                Sign out from your account and return to the login page.
+            </p>
+            <a href="{% url 'citizen_logout' %}" style="display: inline-block; background: #e74c3c; color: white; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px; transition: all 0.3s;" onmouseover="this.style.background='#c0392b'" onmouseout="this.style.background='#e74c3c'">
+                <i class="fas fa-sign-out-alt"></i> Sign Out Now
+            </a>
+        </div>
     </div>
     
     <!-- Service Worker Registration -->

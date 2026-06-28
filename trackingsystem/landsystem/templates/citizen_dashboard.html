@@ -82,13 +82,16 @@
             position: fixed;
             top: 0;
             left: -100%;
-            width: 70%;
-            height: 100%;
+            width: 80%;
+            max-width: 300px;
+            height: 100vh;
             background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
             color: white;
             padding: 80px 20px 20px;
-            z-index: 99;
+            z-index: 999;
             transition: left 0.3s ease;
+            overflow-y: auto;
+            box-shadow: 2px 0 15px rgba(0, 0, 0, 0.2);
         }
         
         .mobile-menu.active {
@@ -102,14 +105,17 @@
             color: white;
             text-decoration: none;
             padding: 15px 20px;
-            margin: 5px 0;
-            border-radius: 8px;
+            margin: 8px 0;
+            border-radius: 10px;
             transition: all 0.3s;
             font-weight: 500;
+            font-size: 15px;
+            background: rgba(255, 255, 255, 0.1);
         }
         
-        .mobile-menu a:hover {
-            background: rgba(255, 255, 255, 0.2);
+        .mobile-menu a:active {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(0.98);
         }
         
         .mobile-menu a i {
@@ -118,12 +124,12 @@
         }
         
         .logout-btn {
-            margin-top: 40px;
-            background: #e74c3c;
+            margin-top: 50px;
+            background: #e74c3c !important;
         }
         
-        .logout-btn:hover {
-            background: #c0392b;
+        .logout-btn:active {
+            background: #c0392b !important;
         }
         
         .overlay {
@@ -132,13 +138,16 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0, 0, 0, 0.5);
+            background: rgba(0, 0, 0, 0.6);
             z-index: 98;
             display: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
         }
         
         .overlay.active {
             display: block;
+            opacity: 1;
         }
         
         /* Main Content */
