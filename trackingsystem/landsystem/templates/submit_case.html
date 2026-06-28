@@ -421,9 +421,13 @@
         
         function getCurrentLocation() {
             if (!navigator.geolocation) {
-                alert("Geolocation is not supported.");
+                showMessage('❌ Geolocation not supported by your browser. Please click on the map to select your location manually.', 'error');
                 return;
             }
+
+            const btn = document.querySelector('.btn-geo');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Requesting location...';
 
             navigator.geolocation.getCurrentPosition(
                 function(position){
@@ -431,16 +435,46 @@
                     const lng = position.coords.longitude;
 
                     updateLocation(lat, lng);
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-location-arrow"></i> Get My Current Location';
                 },
 
                 function(error){
-                    alert(error.message);
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-location-arrow"></i> Get My Current Location';
+                    
+                    let errorMsg = '';
+                    
+                    if (error.code === error.PERMISSION_DENIED) {
+                        errorMsg = '📍 <strong>Location Permission Denied</strong><br/>To enable location:<br/>' +
+                                  '1. Check your browser\'s location permissions<br/>' +
+                                  '2. Allow location access for this site<br/>' +
+                                  '3. Alternatively, click on the map to select your location manually';
+                    } 
+                    else if (error.code === error.POSITION_UNAVAILABLE) {
+                        errorMsg = '📍 <strong>Location Unavailable</strong><br/>' +
+                                  '• Enable location services on your phone<br/>' +
+                                  '• Check WiFi/Mobile signal<br/>' +
+                                  '• Or click on the map to select manually';
+                    } 
+                    else if (error.code === error.TIMEOUT) {
+                        errorMsg = '📍 <strong>Location Request Timed Out</strong><br/>' +
+                                  '• Enable location services<br/>' +
+                                  '• Move to an open area with clear sky view<br/>' +
+                                  '• Or click on the map to select manually';
+                    } 
+                    else {
+                        errorMsg = '📍 <strong>Error Getting Location</strong><br/>' + error.message + 
+                                  '<br/>Please click on the map to select your location';
+                    }
+                    
+                    showMessage(errorMsg, 'error');
                 },
 
                 {
-                    enableHighAccuracy:true,
-                    timeout:30000,
-                    maximumAge:0
+                    enableHighAccuracy: true,
+                    timeout: 30000,
+                    maximumAge: 0
                 }
             );
         }
