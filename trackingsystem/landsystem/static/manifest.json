@@ -1,0 +1,26 @@
+{
+  "name": "Land Dispute System",
+  "short_name": "Land Dispute",
+  "description": "Submit and track land disputes with location mapping",
+  "start_url": "/login/",
+  "display": "standalone",
+  "scope": "/",
+  "background_color": "#ffffff",
+  "theme_color": "#007bff",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%23007bff' width='192' height='192'/><text x='96' y='110' font-size='80' font-weight='bold' fill='white' text-anchor='middle'>LD</text></svg>",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect fill='%23007bff' width='512' height='512'/><text x='256' y='300' font-size='200' font-weight='bold' fill='white' text-anchor='middle'>LD</text></svg>",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "categories": ["productivity"],
+  "orientation": "portrait-primary"
+}

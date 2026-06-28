@@ -2,6 +2,12 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#007bff">
+    <meta name="description" content="Submit and track land disputes with location mapping">
+    <link rel="manifest" href="{% static 'manifest.json' %}">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%23007bff' width='192' height='192'/><text x='96' y='110' font-size='80' font-weight='bold' fill='white' text-anchor='middle'>LD</text></svg>">
     <title>Submit Dispute</title>
     <link rel="stylesheet" href="{% static 'css/submitcase.css' %}">
 </head>
@@ -25,5 +31,18 @@
 </div>
 
 <script src="{% static 'js/app.js' %}"></script>
+
+<!-- Service Worker Registration for PWA -->
+<script>
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('{% static "js/service-worker.js" %}')
+            .then(registration => {
+                console.log('Service Worker registered:', registration);
+            })
+            .catch(error => {
+                console.log('Service Worker registration failed:', error);
+            });
+    }
+</script>
 </body>
 </html>
