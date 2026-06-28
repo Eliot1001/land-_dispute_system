@@ -35,6 +35,8 @@ ALLOWED_HOSTS = [
     "land-dispute-system-ghgp.onrender.com",
     "localhost",
     "127.0.0.1",
+    "192.168.1.9",
+    "0.0.0.0",
 ]
 
 
