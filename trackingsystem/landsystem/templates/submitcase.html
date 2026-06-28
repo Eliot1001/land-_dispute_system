@@ -315,16 +315,11 @@
             <div id="map"></div>
             <div class="location-buttons">
                 <button type="button" class="btn-geo" onclick="getCurrentLocation(this)">
-                    <i class="fas fa-location-arrow"></i> Get Location
-                </button>
-                <button type="button" class="btn-geo" onclick="document.getElementById('latitude').focus()" style="border-color: #95a5a6; color: #95a5a6;">
-                    <i class="fas fa-pen"></i> Manual
+                    <i class="fas fa-location-arrow"></i> Get My Location
                 </button>
             </div>
             <div class="location-info" id="locationInfo" style="display:none;">
-                <strong id="districtName">📍 Location: <span id="district">-</span></strong>
-                <div>Coordinates: <span id="coords">-</span></div>
-                <div>Accuracy: <span id="accuracy">-</span></div>
+                <strong id="districtName">📍 <span id="district">-</span></strong>
                 <span class="badge" id="accuracyBadge">-</span>
             </div>
         </div>
@@ -406,10 +401,10 @@
         document.addEventListener('DOMContentLoaded', initMap);
         
         function getCurrentLocation(btn) {
-            console.log('Getting location...');
+            console.log('🔍 Getting real-time location...');
             
-            // First, ask user to allow location
-            const userConsent = confirm('📍 Allow access to your location?\n\n✓ Click OK\n✓ Then click ALLOW on the next prompt\n✓ We need this to pinpoint your dispute location');
+            // Confirmation dialog
+            const userConsent = confirm('📍 Use your GPS location?\n\n✓ Click OK\n✓ Then click ALLOW on browser prompt\n✓ This will capture your exact location for the dispute');
             
             if (!userConsent) {
                 console.log('User cancelled location request');
@@ -420,16 +415,16 @@
             btn.innerHTML = '<div class="loading-spinner"></div> Getting location...';
             
             if (!navigator.geolocation) {
-                alert('❌ Geolocation not supported in your browser\n\nTry:\n- Update your browser\n- Or use Manual entry below');
+                alert('❌ Geolocation not supported in your browser\n\nTry:\n- Update your browser\n- Or try a different browser');
                 btn.disabled = false;
-                btn.innerHTML = '<i class="fas fa-location-arrow"></i> Get Location';
+                btn.innerHTML = '<i class="fas fa-location-arrow"></i> Get My Location';
                 return;
             }
             
-            // Request location with high accuracy
+            // Request real-time location with high accuracy
             navigator.geolocation.getCurrentPosition(
                 function(position) {
-                    console.log('✓ Location captured:', position.coords);
+                    console.log('✓ Real-time location captured:', position.coords);
                     const lat = parseFloat(position.coords.latitude).toFixed(6);
                     const lng = parseFloat(position.coords.longitude).toFixed(6);
                     const accuracy = Math.round(position.coords.accuracy);
@@ -437,22 +432,22 @@
                     updateLocation(lat, lng, accuracy, btn);
                 },
                 function(error) {
-                    console.error('❌ Geolocation error:', error.code, error.message);
+                    console.error('❌ Location error:', error.code, error.message);
                     let errorMsg = '❌ ';
                     
                     if (error.code === 1) {
-                        errorMsg = '🚫 Location Permission DENIED\n\n✓ On next try, click ALLOW on the permission prompt\n✓ Or check your browser settings:\n  - Settings → Privacy → Location → Allow\n✓ Or use Manual entry below';
+                        errorMsg = '🚫 Permission DENIED\n\n✓ Click "Get My Location" again\n✓ Click ALLOW on the browser prompt\n✓ Make sure location is enabled in browser settings';
                     } else if (error.code === 2) {
-                        errorMsg += 'Position unavailable.\n\nTry:\n✓ Enable GPS on your phone\n✓ Or use Manual entry';
+                        errorMsg += 'Your position is unavailable.\n\n✓ Enable GPS on your phone\n✓ Move to open area (away from buildings)\n✓ Try again';
                     } else if (error.code === 3) {
-                        errorMsg += 'Location request timed out.\n\nTry:\n✓ Wait in open area (away from buildings)\n✓ Try again in a moment';
+                        errorMsg += 'Location request timed out.\n\n✓ Move to area with GPS signal\n✓ Try again';
                     } else {
                         errorMsg += 'Error: ' + error.message;
                     }
                     
                     alert(errorMsg);
                     btn.disabled = false;
-                    btn.innerHTML = '<i class="fas fa-location-arrow"></i> Get Location';
+                    btn.innerHTML = '<i class="fas fa-location-arrow"></i> Get My Location';
                 },
                 {
                     enableHighAccuracy: true,
@@ -463,26 +458,28 @@
         }
         
         function updateLocation(lat, lng, accuracy, btn) {
-            console.log('Updating location:', lat, lng, accuracy);
+            console.log('✓ Location captured - Lat:', lat, 'Lng:', lng, 'Accuracy:', accuracy);
             
+            // Store coordinates in hidden fields (for backend submission)
             document.getElementById('latitude').value = lat;
             document.getElementById('longitude').value = lng;
-            document.getElementById('coords').textContent = `${lat}, ${lng}`;
-            document.getElementById('accuracy').textContent = `${accuracy}m`;
+            
+            // Display only district and accuracy to user
             document.getElementById('locationInfo').style.display = 'block';
             
+            // Accuracy badge
             let badge = '';
             if (accuracy <= 10) {
-                badge = '🎯 Very High';
+                badge = '🎯 Very High Accuracy';
                 document.getElementById('accuracyBadge').className = 'badge badge-high';
             } else if (accuracy <= 25) {
-                badge = '📍 High';
+                badge = '📍 High Accuracy';
                 document.getElementById('accuracyBadge').className = 'badge badge-high';
             } else if (accuracy <= 50) {
-                badge = '📌 Good';
+                badge = '📌 Good Accuracy';
                 document.getElementById('accuracyBadge').className = 'badge badge-good';
             } else {
-                badge = '📍 Fair';
+                badge = '📍 Fair Accuracy';
                 document.getElementById('accuracyBadge').className = 'badge badge-fair';
             }
             document.getElementById('accuracyBadge').textContent = badge;
@@ -496,6 +493,7 @@
                 map.setView([lat, lng], 14);
             }
             
+            // Get and display district
             getDistrictFromCoordinates(lat, lng);
             
             if (btn) {
