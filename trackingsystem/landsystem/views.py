@@ -347,6 +347,51 @@ def citizen_dashboard(request):
 
 
 @login_required(login_url='citizen_login')
+def citizen_profile(request):
+    """Citizen profile - view and edit personal details"""
+    try:
+        citizen = request.user.citizen_profile
+    except Citizen.DoesNotExist:
+        return redirect('citizen_login')
+    
+    if request.method == 'POST':
+        # Update user profile
+        first_name = request.POST.get('first_name', '').strip()
+        last_name = request.POST.get('last_name', '').strip()
+        email = request.POST.get('email', '').strip()
+        phone = request.POST.get('phone', '').strip()
+        
+        # Validate
+        if not all([first_name, last_name, email, phone]):
+            context = {
+                'citizen': citizen,
+                'error': 'All fields are required'
+            }
+            return render(request, 'citizen_profile.html', context)
+        
+        # Update user
+        request.user.first_name = first_name
+        request.user.last_name = last_name
+        request.user.email = email
+        request.user.save()
+        
+        # Update citizen profile
+        citizen.phone = phone
+        citizen.save()
+        
+        context = {
+            'citizen': citizen,
+            'success': 'Profile updated successfully!'
+        }
+        return render(request, 'citizen_profile.html', context)
+    
+    context = {
+        'citizen': citizen,
+    }
+    return render(request, 'citizen_profile.html', context)
+
+
+@login_required(login_url='citizen_login')
 def submit_case(request):
     """Submit a new case with geolocation and file uploads"""
     try:

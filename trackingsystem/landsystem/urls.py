@@ -18,6 +18,7 @@ urlpatterns = [
     path('citizen/login/', views.citizen_login, name='citizen_login'),
     path('citizen/logout/', views.citizen_logout, name='citizen_logout'),
     path('citizen/dashboard/', views.citizen_dashboard, name='citizen_dashboard'),
+    path('citizen/profile/', views.citizen_profile, name='citizen_profile'),
     path('citizen/submit-case/', views.submit_case, name='submit_case'),
     path('citizen/case/<int:case_id>/submitted/', views.case_submitted, name='case_submitted'),
     path('citizen/case/<int:case_id>/', views.citizen_case_detail, name='citizen_case_detail'),
