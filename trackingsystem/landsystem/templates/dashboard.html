@@ -3,11 +3,12 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#007bff">
-    <meta name="description" content="Submit and track land disputes with location mapping">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#667eea">
+    <meta name="description" content="Land Dispute Management System - Officer Dashboard">
     <link rel="manifest" href="{% static 'manifest.json' %}">
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%23007bff' width='192' height='192'/><text x='96' y='110' font-size='80' font-weight='bold' fill='white' text-anchor='middle'>LD</text></svg>">
+    <link rel="icon" type="image/png" href="{% static 'images/logo-192x192.png' %}">
+    <link rel="apple-touch-icon" href="{% static 'images/logo-192x192.png' %}">
     <title>Dashboard - Land Dispute Management System</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
@@ -329,6 +330,10 @@
             <h2>⚖️ Land Dispute System</h2>
             <a href="{% url 'dashboard' %}"><i class="fas fa-chart-line"></i> Dashboard</a>
             <a href="{% url 'case_map' %}"><i class="fas fa-map-location-dot"></i> Case Map</a>
+            {% if request.user.is_superuser or request.user.officer_profile.level == 'high_court' %}
+            <a href="{% url 'case_reports' %}"><i class="fas fa-chart-pie"></i> Reports</a>
+            <a href="{% url 'officer_list' %}"><i class="fas fa-users"></i> Officers</a>
+            {% endif %}
             <a href="{% url 'settings' %}"><i class="fas fa-cog"></i> Settings</a>
             <a href="{% url 'logout' %}" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
         </div>
@@ -345,13 +350,13 @@
                     <p style="font-size: 12px;">{{ user.email }}</p>
                 </div>
             </div>
-            
+
             <!-- Filters and Search -->
             <div class="filters" style="flex-direction: column; gap: 15px;">
                 <!-- Search Bar -->
                 <div style="display: flex; gap: 10px; width: 100%;">
                     <form method="GET" style="display: flex; gap: 10px; flex: 1;">
-                        <input type="text" name="search" placeholder="Search by case name or citizen name..." value="{{ search_query }}" style="flex: 1; padding: 10px 15px; border: 2px solid #bdc3c7; border-radius: 5px; font-size: 14px;">
+                        <input type="text" name="search" placeholder="Search by citizen name or case ID..." value="{{ search_query }}" style="flex: 1; padding: 10px 15px; border: 2px solid #bdc3c7; border-radius: 5px; font-size: 14px;">
                         {% if filter_status != 'all' %}<input type="hidden" name="status" value="{{ filter_status }}">{% endif %}
                         <button type="submit" style="padding: 10px 20px; background: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: 500;">
                             <i class="fas fa-search"></i> Search
@@ -405,7 +410,11 @@
                     <div class="case-info">
                         <strong>Assigned to:</strong> {{ case.assigned_to.get_full_name|default:"Unassigned" }}
                     </div>
-                    
+
+                    <div class="case-info">
+                        <strong>Level:</strong> {{ case.get_current_level_display }}
+                    </div>
+
                     <span class="status-badge status-{{ case.status }}">{{ case.get_status_display }}</span>
                     
                     <div class="case-actions">
@@ -428,18 +437,6 @@
     </div>
     
     <script src="{% static 'js/app.js' %}"></script>
-    
-    <!-- Service Worker Registration for PWA -->
-    <script>
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('{% static "js/service-worker.js" %}')
-                .then(registration => {
-                    console.log('Service Worker registered:', registration);
-                })
-                .catch(error => {
-                    console.log('Service Worker registration failed:', error);
-                });
-        }
-    </script>
+    <script src="{% static 'js/pwa.js' %}"></script>
 </body>
 </html>

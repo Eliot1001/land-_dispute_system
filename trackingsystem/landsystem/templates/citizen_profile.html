@@ -5,6 +5,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#667eea">
+    <meta name="description" content="View and edit your profile">
+    <link rel="manifest" href="{% static 'manifest.json' %}">
+    <link rel="icon" type="image/png" href="{% static 'images/logo-192x192.png' %}">
+    <link rel="apple-touch-icon" href="{% static 'images/logo-192x192.png' %}">
     <title>My Profile - Land Dispute Management System</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
@@ -358,13 +362,6 @@
         </div>
     </div>
     
-    <!-- Service Worker Registration -->
-    <script>
-        // Service Worker Registration
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('{% static "js/service-worker.js" %}')
-                .catch(error => console.log('Service Worker failed:', error));
-        }
-    </script>
+    <script src="{% static 'js/pwa.js' %}"></script>
 </body>
 </html>

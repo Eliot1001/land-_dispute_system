@@ -10,21 +10,21 @@ class CitizenAdmin(admin.ModelAdmin):
 
 @admin.register(OfficerProfile)
 class OfficerProfileAdmin(admin.ModelAdmin):
-    list_display = ['user', 'region', 'phone', 'created_at']
-    list_filter = ['region', 'created_at']
+    list_display = ['user', 'level', 'region', 'phone', 'created_at']
+    list_filter = ['level', 'region', 'created_at']
     search_fields = ['user__username', 'user__first_name', 'user__last_name']
     readonly_fields = ['created_at']
 
 
 @admin.register(Case)
 class CaseAdmin(admin.ModelAdmin):
-    list_display = ['title', 'citizen_name', 'region', 'status', 'assigned_to', 'created_at']
-    list_filter = ['status', 'region', 'created_at']
+    list_display = ['title', 'citizen_name', 'region', 'current_level', 'status', 'assigned_to', 'created_at']
+    list_filter = ['status', 'current_level', 'region', 'created_at']
     search_fields = ['title', 'citizen_name', 'location', 'description']
     readonly_fields = ['created_at', 'updated_at']
     fieldsets = (
         ('Case Information', {
-            'fields': ('title', 'description', 'status', 'citizen')
+            'fields': ('title', 'description', 'status', 'current_level', 'level_updated_at', 'citizen')
         }),
         ('Citizen Information', {
             'fields': ('citizen_name', 'citizen_phone', 'citizen_email')

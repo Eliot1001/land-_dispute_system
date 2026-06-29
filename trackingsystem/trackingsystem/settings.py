@@ -36,7 +36,10 @@ ALLOWED_HOSTS = [
     "localhost",
     "127.0.0.1",
     "192.168.1.9",
+    "192.168.1.5",
+    "192.168.1.2",
     "0.0.0.0",
+    "10.0.2.2",  # Android emulator's alias for the host machine
 ]
 
 
@@ -49,8 +52,20 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'landsystem'
+    'rest_framework',
+    'rest_framework.authtoken',
+    'landsystem',
+    'citizen_api',
 ]
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+}
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',

@@ -30,17 +30,28 @@ class OfficerProfile(models.Model):
         ('mwanza', 'Mwanza Region'),
         ('tanga', 'Tanga Region'),
     ]
-    
+
+    # Ordered lowest to highest. A case starts at the first level and
+    # escalation moves it one step down this list at a time.
+    LEVEL_CHOICES = [
+        ('village', 'Village Officer'),
+        ('ward', 'Ward Officer'),
+        ('district_land_officer', 'District Land Officer'),
+        ('land_housing_tribunal', 'Land and Housing Tribunal'),
+        ('high_court', 'High Court'),
+    ]
+
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='officer_profile')
     region = models.CharField(max_length=50, choices=REGION_CHOICES)
+    level = models.CharField(max_length=30, choices=LEVEL_CHOICES, default='village')
     phone = models.CharField(max_length=20)
     created_at = models.DateTimeField(auto_now_add=True)
-    
+
     class Meta:
         db_table = 'officers'
-    
+
     def __str__(self):
-        return f"Officer {self.user.username} - {self.get_region_display()}"
+        return f"{self.get_level_display()} - {self.user.username} ({self.get_region_display()})"
 
 
 class Case(models.Model):
@@ -62,6 +73,10 @@ class Case(models.Model):
         ('tanga', 'Tanga Region'),
     ]
     
+    # Same ordered hierarchy as OfficerProfile.LEVEL_CHOICES. A case starts
+    # with the village officer and escalation steps it up one level at a time.
+    LEVEL_CHOICES = OfficerProfile.LEVEL_CHOICES
+
     title = models.CharField(max_length=255)
     citizen = models.ForeignKey(Citizen, on_delete=models.CASCADE, null=True, blank=True, related_name='submitted_cases')
     citizen_name = models.CharField(max_length=255)
@@ -73,6 +88,11 @@ class Case(models.Model):
     latitude = models.FloatField()
     longitude = models.FloatField()
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    current_level = models.CharField(max_length=30, choices=LEVEL_CHOICES, default='village')
+    # When the case arrived at current_level - NOT auto_now, since it should
+    # only change when the level actually advances, not on every save. Used to
+    # measure the 5-day auto-escalation window for the current level only.
+    level_updated_at = models.DateTimeField(default=timezone.now)
     assigned_to = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='assigned_cases')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

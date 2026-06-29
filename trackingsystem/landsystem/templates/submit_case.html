@@ -3,7 +3,12 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#667eea">
+    <meta name="description" content="Submit a new land dispute case with GPS location">
+    <link rel="manifest" href="{% static 'manifest.json' %}">
+    <link rel="icon" type="image/png" href="{% static 'images/logo-192x192.png' %}">
+    <link rel="apple-touch-icon" href="{% static 'images/logo-192x192.png' %}">
     <title>Submit Case - Land Dispute Management System</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
@@ -373,37 +378,67 @@
         // Initialize map
         const map = L.map('map').setView([-6.3690, 34.8888], 8);
         
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors',
-            maxZoom: 19
-        }).addTo(map);
+        // Street map - good for roads, place names, region context
+        const streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors, Tiles by <a href="https://www.hotosm.org/" target="_blank">Humanitarian OpenStreetMap Team</a>',
+            maxZoom: 20,
+            detectRetina: true
+        });
+
+        // Satellite imagery - shows real building structures on the ground,
+        // since OSM's community-mapped building outlines are often sparse in
+        // rural areas and the street map looks empty there even zoomed in.
+        const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+            attribution: 'Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community',
+            maxZoom: 19,
+            detectRetina: true
+        });
+
+        streetLayer.addTo(map);
+        L.control.layers({ 'Street Map': streetLayer, 'Satellite': satelliteLayer }).addTo(map);
         
         let marker = null;
-        
+        let accuracyCircle = null;
+
         // Click on map to select location
         map.on('click', function(e) {
             const lat = e.latlng.lat;
             const lng = e.latlng.lng;
             updateLocation(lat, lng);
         });
-        
-        async function updateLocation(lat, lng) {
-            console.log('🗺️ updateLocation called with:', { lat, lng });
-            
+
+        async function updateLocation(lat, lng, accuracy) {
+            console.log('🗺️ updateLocation called with:', { lat, lng, accuracy });
+
             // Update hidden inputs with coordinates for backend
             document.getElementById('latitude').value = lat;
             document.getElementById('longitude').value = lng;
             console.log('✅ Coordinates saved to form fields');
-            
-            // Remove old marker if exists
+
+            // Remove old marker/accuracy circle if they exist
             if (marker) {
                 map.removeLayer(marker);
             }
-            
+            if (accuracyCircle) {
+                map.removeLayer(accuracyCircle);
+                accuracyCircle = null;
+            }
+
             // Add new marker to map
             marker = L.marker([lat, lng]).addTo(map);
             console.log('📍 Marker added to map');
-            
+
+            // Visualize GPS precision (manual map clicks have no accuracy value)
+            if (accuracy) {
+                accuracyCircle = L.circle([lat, lng], {
+                    radius: accuracy,
+                    color: '#27ae60',
+                    fillColor: '#27ae60',
+                    fillOpacity: 0.15,
+                    weight: 1
+                }).addTo(map);
+            }
+
             // Smoothly animate map to marker with higher zoom
             map.flyTo([lat, lng], 19, {
                 animate: true,
@@ -429,8 +464,8 @@
                 
                 // Extract location components
                 const region = address.state || address.region || '';
-                const district = address.county || address.city || address.town || '';
-                const ward = address.suburb || address.village || '';
+                const district = address.county || address.town || address.city || '';
+                const ward = address.suburb || address.neighbourhood || address.city_district || address.village || '';
                 const street = address.road || '';
                 
                 // Build full location string
@@ -454,11 +489,11 @@
                     <b>📍 Your Exact Location</b><br/>
                     ${fullLocation}<br/><br/>
                     <small>Latitude: ${lat.toFixed(6)}<br/>
-                    Longitude: ${lng.toFixed(6)}</small>
+                    Longitude: ${lng.toFixed(6)}${accuracy ? `<br/>GPS accuracy: ±${Math.round(accuracy)}m` : ''}</small>
                 `).openPopup();
-                
+
                 console.log(`✅ LOCATION PINNED SUCCESSFULLY`);
-                showMessage(`✅ Location pinned!<br/><strong>📍 ${fullLocation}</strong>`, 'success');
+                showMessage(`✅ Location pinned!<br/><strong>📍 ${fullLocation}</strong>${accuracy ? `<br/><small>GPS accuracy: ±${Math.round(accuracy)}m</small>` : ''}`, 'success');
                 
             } catch (error) {
                 // Fallback if geocoding fails
@@ -470,10 +505,10 @@
                 marker.bindPopup(`
                     <b>📍 Location Pinned</b><br/>
                     <small>Latitude: ${lat.toFixed(6)}<br/>
-                    Longitude: ${lng.toFixed(6)}</small>
+                    Longitude: ${lng.toFixed(6)}${accuracy ? `<br/>GPS accuracy: ±${Math.round(accuracy)}m` : ''}</small>
                 `).openPopup();
-                
-                showMessage(`✅ Location pinned!<br/><strong>📍 Coordinates saved</strong>`, 'success');
+
+                showMessage(`✅ Location pinned!<br/><strong>📍 Coordinates saved</strong>${accuracy ? `<br/><small>GPS accuracy: ±${Math.round(accuracy)}m</small>` : ''}`, 'success');
             }
         }
         
@@ -489,8 +524,8 @@
         }
         
         function getCurrentLocation() {
-            console.log('🔍 Starting location request...');
-            
+            console.log('🔍 Starting precise location request...');
+
             if (!navigator.geolocation) {
                 console.error('❌ Geolocation not supported');
                 showMessage('❌ Geolocation not supported by your browser. Please click on the map to select your location manually.', 'error');
@@ -499,35 +534,69 @@
 
             const btn = document.querySelector('.btn-geo');
             btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Requesting location...';
-            
-            console.log('📡 Requesting geolocation from device...');
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Pinpointing your location...';
 
-            navigator.geolocation.getCurrentPosition(
+            // Keep listening for GPS updates and keep the most accurate one seen,
+            // since the first fix on a phone is often a fast, low-accuracy network
+            // fix before the GPS chip locks on to a much more exact one.
+            const GOOD_ACCURACY_METERS = 20;
+            const MAX_WAIT_MS = 15000;
+
+            let bestPosition = null;
+            let watchId = null;
+            let finished = false;
+
+            function finish() {
+                if (finished) return;
+                finished = true;
+                if (watchId !== null) {
+                    navigator.geolocation.clearWatch(watchId);
+                }
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-location-arrow"></i> Get My Current Location';
+
+                if (bestPosition) {
+                    const { latitude, longitude, accuracy } = bestPosition.coords;
+                    console.log(`✅ Best fix used: ${latitude}, ${longitude} (±${accuracy}m)`);
+                    updateLocation(latitude, longitude, accuracy);
+                } else {
+                    showMessage('📍 <strong>Could not get a precise GPS fix in time.</strong><br/>Please click on the map to select your location manually.', 'error');
+                }
+            }
+
+            watchId = navigator.geolocation.watchPosition(
                 function(position) {
-                    console.log('✅ Position received:', position);
-                    
-                    const lat = position.coords.latitude;
-                    const lng = position.coords.longitude;
-                    const accuracy = position.coords.accuracy;
-                    
-                    console.log(`📍 Coordinates: ${lat}, ${lng}`);
-                    console.log(`📏 Accuracy: ${accuracy}m`);
+                    console.log(`📍 Position update: ${position.coords.latitude}, ${position.coords.longitude} (±${position.coords.accuracy}m)`);
 
-                    updateLocation(lat, lng);
-                    btn.disabled = false;
-                    btn.innerHTML = '<i class="fas fa-location-arrow"></i> Get My Current Location';
+                    if (!bestPosition || position.coords.accuracy < bestPosition.coords.accuracy) {
+                        bestPosition = position;
+                    }
+
+                    // Good enough fix obtained - no need to keep waiting
+                    if (position.coords.accuracy <= GOOD_ACCURACY_METERS) {
+                        finish();
+                    }
                 },
 
                 function(error) {
                     console.error('❌ Geolocation error:', error);
-                    
+
+                    // A usable fix already arrived before this error - keep it.
+                    if (bestPosition) {
+                        finish();
+                        return;
+                    }
+
+                    if (watchId !== null) {
+                        navigator.geolocation.clearWatch(watchId);
+                    }
+                    finished = true;
                     btn.disabled = false;
                     btn.innerHTML = '<i class="fas fa-location-arrow"></i> Get My Current Location';
-                    
+
                     let errorMsg = '';
                     let errorCode = error.code;
-                    
+
                     if (errorCode === 1) { // PERMISSION_DENIED
                         console.warn('Permission denied by user');
                         errorMsg = '📍 <strong>Location Permission Denied</strong><br/>' +
@@ -536,7 +605,7 @@
                                   '2️⃣ Click it and select "Allow" for this site<br/>' +
                                   '3️⃣ Try again<br/><br/>' +
                                   '<em>Or simply click on the map to select location manually</em>';
-                    } 
+                    }
                     else if (errorCode === 2) { // POSITION_UNAVAILABLE
                         console.warn('Position unavailable');
                         errorMsg = '📍 <strong>Location Service Unavailable</strong><br/>' +
@@ -544,7 +613,7 @@
                                   '• Ensure strong WiFi/Mobile signal<br/>' +
                                   '• Wait a moment and try again<br/><br/>' +
                                   '<em>Or click the map to select manually</em>';
-                    } 
+                    }
                     else if (errorCode === 3) { // TIMEOUT
                         console.warn('Location request timeout');
                         errorMsg = '📍 <strong>Location Request Timed Out</strong><br/>' +
@@ -553,23 +622,26 @@
                                   '• Wait for GPS signal to lock<br/>' +
                                   '• Try again in 5 seconds<br/><br/>' +
                                   '<em>Or click the map to select manually</em>';
-                    } 
+                    }
                     else {
                         console.error('Unknown error:', error.message);
-                        errorMsg = '📍 <strong>Unable to Get Location</strong><br/>' + 
-                                  'Error: ' + (error.message || 'Unknown') + 
+                        errorMsg = '📍 <strong>Unable to Get Location</strong><br/>' +
+                                  'Error: ' + (error.message || 'Unknown') +
                                   '<br/><br/><em>Please click on the map to select your location manually</em>';
                     }
-                    
+
                     showMessage(errorMsg, 'error');
                 },
 
                 {
                     enableHighAccuracy: true,
-                    timeout: 30000,
+                    timeout: 20000,
                     maximumAge: 0
                 }
             );
+
+            // Hard stop: settle for the best fix obtained within the time budget
+            setTimeout(finish, MAX_WAIT_MS);
         }
         
         
@@ -613,5 +685,6 @@
             }
         });
     </script>
+    <script src="{% static 'js/pwa.js' %}"></script>
 </body>
 </html>

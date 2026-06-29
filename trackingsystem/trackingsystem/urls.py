@@ -23,7 +23,8 @@ import os
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-     path('', include('landsystem.urls')),
+    path('api/', include('citizen_api.urls')),
+    path('', include('landsystem.urls')),
 ]
 
 if settings.DEBUG:

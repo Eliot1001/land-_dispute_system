@@ -1,12 +1,20 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User, Group
 from django.views.decorators.http import require_http_methods
 from django.http import JsonResponse, FileResponse, HttpResponseForbidden
-from django.db.models import Q
+from django.db.models import Q, Count
+from django.utils import timezone
 from .models import Case, Citizen, OfficerProfile, CaseDocument
 import json
+import math
+
+
+# Escalation hierarchy, lowest to highest. Matches OfficerProfile.LEVEL_CHOICES
+# and Case.LEVEL_CHOICES.
+LEVEL_ORDER = ['village', 'ward', 'district_land_officer', 'land_housing_tribunal', 'high_court']
 
 
 # Region coordinates for mapping
@@ -14,7 +22,7 @@ REGION_COORDS = {
     'arusha': {'lat': -3.3731, 'lng': 36.6753, 'name': 'Arusha Region'},
     'dar_es_salaam': {'lat': -6.8000, 'lng': 39.2800, 'name': 'Dar es Salaam'},
     'dodoma': {'lat': -6.1856, 'lng': 35.7382, 'name': 'Dodoma Region'},
-    'iringa': {'lat': -8.7731, 'lng': 33.4597, 'name': 'Iringa Region'},
+    'iringa': {'lat': -7.7689, 'lng': 35.6998, 'name': 'Iringa Region'},
     'kagera': {'lat': -1.2921, 'lng': 31.8974, 'name': 'Kagera Region'},
     'mbeya': {'lat': -8.7731, 'lng': 33.4597, 'name': 'Mbeya Region'},
     'mwanza': {'lat': -2.5167, 'lng': 32.9000, 'name': 'Mwanza Region'},
@@ -23,36 +31,111 @@ REGION_COORDS = {
 
 
 def get_region_from_coordinates(lat, lng):
-    """Determine region from coordinates"""
-    if lat < -7 and lng > 33:
-        if lng > 34:
-            return 'mbeya'
-        return 'iringa'
-    elif lat < -6 and lng < 40:
-        return 'dodoma'
-    elif lat < -6 and lng > 39:
-        return 'dar_es_salaam'
-    elif lat < -3 and lng > 36:
-        return 'arusha'
-    elif lat < -2 and lng > 31:
-        return 'mwanza'
-    elif lat > 0 and lng > 31:
-        return 'kagera'
-    elif lat < -5 and lng > 39:
-        return 'tanga'
-    else:
-        return 'dodoma'  # Default
+    """Determine the region whose center is closest to the given coordinates."""
+    def distance_km(lat1, lng1, lat2, lng2):
+        radius_km = 6371
+        d_lat = math.radians(lat2 - lat1)
+        d_lng = math.radians(lng2 - lng1)
+        a = (math.sin(d_lat / 2) ** 2
+             + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(d_lng / 2) ** 2)
+        return radius_km * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+
+    return min(
+        REGION_COORDS,
+        key=lambda region: distance_km(lat, lng, REGION_COORDS[region]['lat'], REGION_COORDS[region]['lng']),
+    )
 
 
 def assign_case_to_officer(case):
-    """Automatically assign case to an officer in the case's region"""
+    """Assign a case to an officer at its current level, in its region."""
     try:
-        officer = OfficerProfile.objects.filter(region=case.region).first()
+        officer = OfficerProfile.objects.filter(region=case.region, level=case.current_level).first()
         if officer:
             case.assigned_to = officer.user
             case.save()
     except Exception as e:
         print(f"Error assigning case: {e}")
+
+
+def escalate_case(case):
+    """Move a case to the next level up and reassign it there.
+
+    Returns False if the case is already at the top of the hierarchy
+    (High Court), since there's nowhere higher to escalate to.
+    """
+    try:
+        current_index = LEVEL_ORDER.index(case.current_level)
+    except ValueError:
+        current_index = 0
+
+    if current_index >= len(LEVEL_ORDER) - 1:
+        return False
+
+    case.current_level = LEVEL_ORDER[current_index + 1]
+    case.level_updated_at = timezone.now()
+    # Status stays a plain lifecycle value (pending/in_progress/resolved) -
+    # the case is unclaimed at its new level, so it's pending again there.
+    # The level change itself is surfaced separately (see current_level),
+    # not folded into status.
+    case.status = 'pending'
+    case.assigned_to = None
+    case.save()
+    assign_case_to_officer(case)
+    return True
+
+
+def get_officer_profile(user):
+    """Return the user's OfficerProfile, or None if they don't have one."""
+    try:
+        return user.officer_profile
+    except OfficerProfile.DoesNotExist:
+        return None
+
+
+def is_admin_user(user, officer=None):
+    """High Court is the top of the hierarchy and acts as the system admin,
+    with visibility into every case. The Django superuser account is also
+    treated as admin so there's always a way to register the first High
+    Court officer."""
+    if user.is_superuser:
+        return True
+    if officer is None:
+        officer = get_officer_profile(user)
+    return officer is not None and officer.level == 'high_court'
+
+
+def build_case_summary():
+    """Aggregate case counts by status, hierarchy level, and region - gives
+    High Court (the system admin) an at-a-glance overview of every case."""
+    status_labels = dict(Case.STATUS_CHOICES)
+    level_labels = dict(Case.LEVEL_CHOICES)
+    region_labels = dict(Case.REGION_CHOICES)
+
+    def counts_by(field, labels):
+        rows = Case.objects.values(field).annotate(count=Count('id')).order_by(field)
+        return [{'label': labels.get(row[field], row[field]), 'count': row['count']} for row in rows]
+
+    total = Case.objects.count()
+    resolved = Case.objects.filter(status='resolved').count()
+    return {
+        'total': total,
+        'resolved': resolved,
+        'resolution_rate': round((resolved / total) * 100, 1) if total else 0,
+        'by_status': counts_by('status', status_labels),
+        'by_level': counts_by('current_level', level_labels),
+        'by_region': counts_by('region', region_labels),
+    }
+
+
+def get_registered_officers():
+    """All registered officers, ordered by hierarchy level (village to high
+    court) then region - for the admin's officer list."""
+    officers = list(OfficerProfile.objects.select_related('user'))
+    officers.sort(key=lambda o: (
+        LEVEL_ORDER.index(o.level) if o.level in LEVEL_ORDER else len(LEVEL_ORDER),
+        o.region,
+    ))
+    return officers
 
 
 # ===== OFFICER VIEWS =====
@@ -86,29 +169,29 @@ def dashboard(request):
     """Officer Dashboard showing assigned and all cases"""
     filter_status = request.GET.get('status', 'all')
     search_query = request.GET.get('search', '').strip()
-    
-    # Check if user is an officer
-    try:
-        officer = request.user.officer_profile
-        # Show all cases (assigned to officer or in their region)
+
+    officer = get_officer_profile(request.user)
+    if officer is None:
+        # Not an officer (e.g. a bootstrap superuser with no profile yet) -
+        # nothing has been forwarded to them. They can still reach Reports.
+        cases = Case.objects.none()
+    else:
+        # Show cases forwarded to this officer: ones assigned to them, or
+        # unassigned cases sitting at their own level/region. This applies
+        # the same way at every tier, including High Court - they only see
+        # what's actually been escalated up to them, not every case in the
+        # system. The system-wide overview lives on the Reports page instead.
         if filter_status == 'all':
-            cases = Case.objects.filter(assigned_to=request.user) | Case.objects.filter(region=officer.region, assigned_to__isnull=True)
+            cases = Case.objects.filter(assigned_to=request.user) | Case.objects.filter(region=officer.region, current_level=officer.level, assigned_to__isnull=True)
         else:
-            cases = Case.objects.filter(status=filter_status, assigned_to=request.user) | Case.objects.filter(status=filter_status, region=officer.region, assigned_to__isnull=True)
-    except OfficerProfile.DoesNotExist:
-        # Show all cases for admins
-        if filter_status == 'all':
-            cases = Case.objects.all()
-        else:
-            cases = Case.objects.filter(status=filter_status)
+            cases = Case.objects.filter(status=filter_status, assigned_to=request.user) | Case.objects.filter(status=filter_status, region=officer.region, current_level=officer.level, assigned_to__isnull=True)
     
-    # Apply search filter
+    # Search by citizen name, or by exact case ID
     if search_query:
-        cases = cases.filter(
-            Q(title__icontains=search_query) | 
-            Q(citizen_name__icontains=search_query) |
-            Q(description__icontains=search_query)
-        )
+        search_filter = Q(citizen_name__icontains=search_query)
+        if search_query.isdigit():
+            search_filter |= Q(id=int(search_query))
+        cases = cases.filter(search_filter)
     
     context = {
         'cases': cases,
@@ -125,21 +208,21 @@ def dashboard(request):
 def case_detail(request, case_id):
     """View detailed case information"""
     case = get_object_or_404(Case, id=case_id)
-    
+
     # Check if user is authorized to view this specific case
     # Allow if: user is assigned to case, or user is admin/superuser
     can_view = False
-    
-    # Check if user is admin/superuser (can view any case)
-    if request.user.is_superuser or (request.user.is_staff and request.user.is_active):
+
+    # Check if user is admin (High Court or superuser/staff)
+    if is_admin_user(request.user) or (request.user.is_staff and request.user.is_active):
         can_view = True
     # Check if user is assigned to this specific case
     elif case.assigned_to == request.user:
         can_view = True
-    
+
     if not can_view:
         return HttpResponseForbidden("You do not have permission to view this case. Only the assigned officer or administrators can access this case.")
-    
+
     if request.method == 'POST':
         case.notes = request.POST.get('notes', case.notes)
         case.assigned_to = request.user if request.POST.get('assign_to_me') else case.assigned_to
@@ -154,8 +237,15 @@ def case_detail(request, case_id):
 
 @login_required(login_url='login')
 def case_map(request):
-    """Display all cases on a map"""
-    cases = Case.objects.all()
+    """Display cases on a map - admins (High Court) see every case, other
+    officers only see their own."""
+    officer = get_officer_profile(request.user)
+    if is_admin_user(request.user, officer):
+        cases = Case.objects.all()
+    elif officer is None:
+        cases = Case.objects.none()
+    else:
+        cases = Case.objects.filter(assigned_to=request.user) | Case.objects.filter(region=officer.region, current_level=officer.level, assigned_to__isnull=True)
     cases_data = []
     
     for case in cases:
@@ -194,8 +284,8 @@ def update_case_status(request, case_id):
     # Only allow if: user is assigned to case, or user is admin/superuser
     can_update = False
     
-    # Check if user is admin/superuser (can update any case)
-    if request.user.is_superuser or (request.user.is_staff and request.user.is_active):
+    # Check if user is admin (High Court or superuser/staff)
+    if is_admin_user(request.user) or (request.user.is_staff and request.user.is_active):
         can_update = True
     # Check if user is assigned to this specific case
     elif case.assigned_to == request.user:
@@ -207,15 +297,117 @@ def update_case_status(request, case_id):
     if request.method == 'POST':
         # Handle quick action buttons (name="status" with value)
         new_status = request.POST.get('status')
-        
+
         # Validate status against available choices
         valid_statuses = [choice[0] for choice in Case.STATUS_CHOICES]
         if new_status and new_status in valid_statuses:
+            if new_status == 'escalated':
+                # Escalating moves the case to the next level up the
+                # hierarchy and reassigns it there - a no-op if the case is
+                # already at the High Court, the top of the chain. The case
+                # has now left this officer's queue, so send them back to
+                # the dashboard instead of a case_detail page they may no
+                # longer have permission to view.
+                escalate_case(case)
+                return redirect('dashboard')
             case.status = new_status
             case.save()
             return redirect('case_detail', case_id=case.id)
     
     return redirect('case_detail', case_id=case_id)
+
+
+@login_required(login_url='login')
+def case_reports(request):
+    """Admin-only: system-wide overview of how cases are progressing, as
+    pie/bar charts - status breakdown, hierarchy level, and region."""
+    if not is_admin_user(request.user):
+        return HttpResponseForbidden("Only administrators can view reports.")
+
+    summary = build_case_summary()
+    context = {
+        'summary': summary,
+        'status_chart_data': json.dumps({
+            'labels': [row['label'] for row in summary['by_status']],
+            'counts': [row['count'] for row in summary['by_status']],
+        }),
+        'level_chart_data': json.dumps({
+            'labels': [row['label'] for row in summary['by_level']],
+            'counts': [row['count'] for row in summary['by_level']],
+        }),
+        'region_chart_data': json.dumps({
+            'labels': [row['label'] for row in summary['by_region']],
+            'counts': [row['count'] for row in summary['by_region']],
+        }),
+    }
+    return render(request, 'reports.html', context)
+
+
+@login_required(login_url='login')
+def officer_list(request):
+    """Admin-only: list every registered officer and their level/region,
+    with a button to register a new one."""
+    if not is_admin_user(request.user):
+        return HttpResponseForbidden("Only administrators can view officers.")
+
+    return render(request, 'officers.html', {'officers': get_registered_officers()})
+
+
+@login_required(login_url='login')
+def register_officer(request):
+    """Admin-only: register a new officer at a given hierarchy level and region.
+    High Court is the top of the hierarchy and acts as the main admin, so it
+    can register officers too; the superuser account remains as a bootstrap
+    path for registering the first High Court officer."""
+    if not is_admin_user(request.user):
+        return HttpResponseForbidden("Only administrators can register officers.")
+
+    if request.method == 'POST':
+        first_name = request.POST.get('first_name', '').strip()
+        last_name = request.POST.get('last_name', '').strip()
+        email = request.POST.get('email', '').strip()
+        phone = request.POST.get('phone', '').strip()
+        username = request.POST.get('username', '').strip()
+        password = request.POST.get('password')
+        password_confirm = request.POST.get('password_confirm')
+        level = request.POST.get('level')
+        region = request.POST.get('region')
+
+        common_context = {
+            'levels': OfficerProfile.LEVEL_CHOICES,
+            'regions': OfficerProfile.REGION_CHOICES,
+        }
+
+        if not all([first_name, last_name, email, phone, username, password, password_confirm, level, region]):
+            return render(request, 'register_officer.html', {'error': 'Please fill in all fields', **common_context})
+
+        if password != password_confirm:
+            return render(request, 'register_officer.html', {'error': 'Passwords do not match', **common_context})
+
+        if User.objects.filter(username=username).exists():
+            return render(request, 'register_officer.html', {'error': 'Username already exists', **common_context})
+
+        valid_levels = [choice[0] for choice in OfficerProfile.LEVEL_CHOICES]
+        valid_regions = [choice[0] for choice in OfficerProfile.REGION_CHOICES]
+        if level not in valid_levels or region not in valid_regions:
+            return render(request, 'register_officer.html', {'error': 'Invalid level or region', **common_context})
+
+        user = User.objects.create_user(
+            username=username,
+            email=email,
+            password=password,
+            first_name=first_name,
+            last_name=last_name,
+        )
+        officer = OfficerProfile.objects.create(user=user, region=region, level=level, phone=phone)
+
+        messages.success(request, f'{first_name} {last_name} registered as {officer.get_level_display()} for {officer.get_region_display()}.')
+        return redirect('officer_list')
+
+    return render(request, 'register_officer.html', {
+        'levels': OfficerProfile.LEVEL_CHOICES,
+        'regions': OfficerProfile.REGION_CHOICES,
+    })
 
 
 @login_required(login_url='login')
@@ -284,14 +476,15 @@ def citizen_register(request):
         username = request.POST.get('username')
         password = request.POST.get('password')
         password_confirm = request.POST.get('password_confirm')
-        
+        region = request.POST.get('region', '')
+
         # Validation
         if password != password_confirm:
             return render(request, 'citizen_register.html', {'error': 'Passwords do not match'})
-        
+
         if User.objects.filter(username=username).exists():
             return render(request, 'citizen_register.html', {'error': 'Username already exists'})
-        
+
         # Create user
         user = User.objects.create_user(
             username=username,
@@ -300,11 +493,12 @@ def citizen_register(request):
             first_name=first_name,
             last_name=last_name
         )
-        
+
         # Create citizen profile
         Citizen.objects.create(
             user=user,
-            phone=phone
+            phone=phone,
+            region=region
         )
         
         # Log in user
@@ -354,9 +548,9 @@ def citizen_dashboard(request):
         citizen = request.user.citizen_profile
     except Citizen.DoesNotExist:
         return redirect('citizen_login')
-    
+
     filter_status = request.GET.get('status', 'all')
-    
+
     if filter_status == 'all':
         cases = Case.objects.filter(citizen=citizen)
     else:
@@ -511,7 +705,7 @@ def citizen_case_detail(request, case_id):
         return redirect('citizen_login')
     
     case = get_object_or_404(Case, id=case_id, citizen=citizen)
-    
+
     context = {
         'case': case,
     }

@@ -4,6 +4,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#667eea">
+    <meta name="description" content="View your case details and track status">
+    <link rel="manifest" href="{% static 'manifest.json' %}">
+    <link rel="icon" type="image/png" href="{% static 'images/logo-192x192.png' %}">
+    <link rel="apple-touch-icon" href="{% static 'images/logo-192x192.png' %}">
     <title>{{ case.title }} - Land Dispute Case</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
@@ -587,12 +592,12 @@
         </div>
         {% endif %}
         
-        {% if case.status == 'escalated' %}
+        {% if case.current_level != 'village' %}
         <div style="background: linear-gradient(135deg, rgba(231, 76, 60, 0.15) 0%, rgba(231, 76, 60, 0.05) 100%); border-left: 4px solid #e74c3c; padding: 15px 20px; border-radius: 8px; margin-bottom: 20px; display: flex; align-items: center; gap: 12px; box-shadow: 0 2px 8px rgba(231, 76, 60, 0.1);">
             <div style="font-size: 24px;">⬆️</div>
             <div>
-                <div style="font-weight: 700; color: #2c3e50; font-size: 14px;">Case Escalated to Higher Authority</div>
-                <div style="font-size: 12px; color: #7f8c8d; margin-top: 3px;">This case requires higher-level review and decision-making.</div>
+                <div style="font-weight: 700; color: #2c3e50; font-size: 14px;">Case Escalated to {{ case.get_current_level_display }}</div>
+                <div style="font-size: 12px; color: #7f8c8d; margin-top: 3px;">Your case has moved up to {{ case.get_current_level_display }} for higher-level review.</div>
             </div>
         </div>
         {% endif %}
@@ -616,6 +621,10 @@
             <div class="info-card">
                 <div class="info-card-label">🌍 Region</div>
                 <div class="info-card-value">{{ case.get_region_display }}</div>
+            </div>
+            <div class="info-card">
+                <div class="info-card-label">🏛️ Currently With</div>
+                <div class="info-card-value">{{ case.get_current_level_display }}</div>
             </div>
             <div class="info-card">
                 <div class="info-card-label">📅 Filed On</div>
@@ -658,7 +667,7 @@
         </div>
         
         <!-- Progress Status -->
-        {% if case.status != 'pending' or case.assigned_to or case.notes %}
+        {% if case.status != 'pending' or case.assigned_to or case.notes or case.current_level != 'village' %}
         <div class="progress-card">
             <div class="card-title">
                 <i class="fas fa-tasks"></i> Case Progress
@@ -673,8 +682,8 @@
                     <div class="progress-dot">{% if case.assigned_to %}✓{% else %}2{% endif %}</div>
                     <div class="progress-label">Assigned</div>
                 </div>
-                <div class="progress-step {% if case.status == 'in_progress' or case.status == 'escalated' %}active{% elif case.status == 'resolved' %}completed{% endif %}">
-                    <div class="progress-dot">{% if case.status == 'resolved' %}✓{% elif case.status == 'in_progress' or case.status == 'escalated' %}⚙️{% else %}3{% endif %}</div>
+                <div class="progress-step {% if case.status == 'in_progress' or case.current_level != 'village' %}active{% elif case.status == 'resolved' %}completed{% endif %}">
+                    <div class="progress-dot">{% if case.status == 'resolved' %}✓{% elif case.status == 'in_progress' or case.current_level != 'village' %}⚙️{% else %}3{% endif %}</div>
                     <div class="progress-label">Processing</div>
                 </div>
                 <div class="progress-step {% if case.status == 'resolved' %}completed{% endif %}">
@@ -775,10 +784,24 @@
         // Initialize map
         const map = L.map('map').setView([{{ case.latitude }}, {{ case.longitude }}], 14);
         
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors',
-            maxZoom: 19
-        }).addTo(map);
+        // Street map - good for roads, place names, region context
+        const streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors, Tiles by <a href="https://www.hotosm.org/" target="_blank">Humanitarian OpenStreetMap Team</a>',
+            maxZoom: 20,
+            detectRetina: true
+        });
+
+        // Satellite imagery - shows real building structures on the ground,
+        // since OSM's community-mapped building outlines are often sparse in
+        // rural areas and the street map looks empty there even zoomed in.
+        const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+            attribution: 'Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community',
+            maxZoom: 19,
+            detectRetina: true
+        });
+
+        streetLayer.addTo(map);
+        L.control.layers({ 'Street Map': streetLayer, 'Satellite': satelliteLayer }).addTo(map);
         
         // Add custom marker
         const marker = L.marker([{{ case.latitude }}, {{ case.longitude }}], {
@@ -933,10 +956,24 @@
         // Initialize map
         const map = L.map('map').setView([{{ case.latitude }}, {{ case.longitude }}], 12);
         
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors',
-            maxZoom: 19
-        }).addTo(map);
+        // Street map - good for roads, place names, region context
+        const streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors, Tiles by <a href="https://www.hotosm.org/" target="_blank">Humanitarian OpenStreetMap Team</a>',
+            maxZoom: 20,
+            detectRetina: true
+        });
+
+        // Satellite imagery - shows real building structures on the ground,
+        // since OSM's community-mapped building outlines are often sparse in
+        // rural areas and the street map looks empty there even zoomed in.
+        const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+            attribution: 'Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community',
+            maxZoom: 19,
+            detectRetina: true
+        });
+
+        streetLayer.addTo(map);
+        L.control.layers({ 'Street Map': streetLayer, 'Satellite': satelliteLayer }).addTo(map);
         
         // Add marker for case location
         const marker = L.marker([{{ case.latitude }}, {{ case.longitude }}], {
@@ -948,5 +985,6 @@
         
         marker.bindPopup(`<div style="text-align: center;"><strong>{{ case.title }}</strong><br>{{ case.location }}</div>`).openPopup();
     </script>
+    <script src="{% static 'js/pwa.js' %}"></script>
 </body>
 </html>

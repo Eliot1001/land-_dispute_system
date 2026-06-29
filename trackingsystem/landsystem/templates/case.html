@@ -3,12 +3,13 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#007bff">
-    <meta name="description" content="Submit and track land disputes with location mapping">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#667eea">
+    <meta name="description" content="Land Dispute Management System - View and manage cases">
     <link rel="manifest" href="{% static 'manifest.json' %}">
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%23007bff' width='192' height='192'/><text x='96' y='110' font-size='80' font-weight='bold' fill='white' text-anchor='middle'>LD</text></svg>">
-    <title>Case Details - Land Dispute Management System</title>
+    <link rel="icon" type="image/png" href="{% static 'images/logo-192x192.png' %}">
+    <link rel="apple-touch-icon" href="{% static 'images/logo-192x192.png' %}">
+    <title>Cases - Land Dispute Management System</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         * {
@@ -285,6 +286,10 @@
             <h2>⚖️ Land Dispute System</h2>
             <a href="{% url 'dashboard' %}"><i class="fas fa-chart-line"></i> Dashboard</a>
             <a href="{% url 'case_map' %}"><i class="fas fa-map-location-dot"></i> Case Map</a>
+            {% if request.user.is_superuser or request.user.officer_profile.level == 'high_court' %}
+            <a href="{% url 'case_reports' %}"><i class="fas fa-chart-pie"></i> Reports</a>
+            <a href="{% url 'officer_list' %}"><i class="fas fa-users"></i> Officers</a>
+            {% endif %}
             <a href="{% url 'settings' %}"><i class="fas fa-cog"></i> Settings</a>
             <a href="{% url 'logout' %}" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
         </div>
@@ -404,19 +409,7 @@
     </div>
     
     <script src="{% static 'js/app.js' %}"></script>
-    
-    <!-- Service Worker Registration for PWA -->
-    <script>
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('{% static "js/service-worker.js" %}')
-                .then(registration => {
-                    console.log('Service Worker registered:', registration);
-                })
-                .catch(error => {
-                    console.log('Service Worker registration failed:', error);
-                });
-        }
-    </script>
+    <script src="{% static 'js/pwa.js' %}"></script>
 </body>
 </html>
 

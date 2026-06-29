@@ -7,6 +7,8 @@
     <meta name="theme-color" content="#667eea">
     <meta name="description" content="Land Dispute Management System - Register">
     <link rel="manifest" href="{% static 'manifest.json' %}">
+    <link rel="icon" type="image/png" href="{% static 'images/logo-192x192.png' %}">
+    <link rel="apple-touch-icon" href="{% static 'images/logo-192x192.png' %}">
     <title>Citizen Registration - Land Dispute Management System</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
@@ -131,7 +133,36 @@
         .btn-submit:active {
             transform: scale(0.98);
         }
-        
+
+        .btn-location {
+            width: 100%;
+            padding: 11px;
+            background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-location:active {
+            transform: scale(0.98);
+        }
+
+        .detected-location {
+            margin-top: 8px;
+            font-size: 13px;
+            color: #27ae60;
+            font-weight: 600;
+            min-height: 16px;
+        }
+
         .error-message {
             background: #fee;
             color: #c33;
@@ -203,7 +234,16 @@
                     <label for="phone"><i class="fas fa-phone"></i> Phone Number</label>
                     <input type="tel" id="phone" name="phone" placeholder="0712345678" required>
                 </div>
-                
+
+                <div class="form-group">
+                    <label><i class="fas fa-map-marker-alt"></i> Region (optional)</label>
+                    <button type="button" class="btn-location" onclick="getMyLocation()">
+                        <i class="fas fa-location-arrow"></i> Get My Location
+                    </button>
+                    <p id="location" class="detected-location"></p>
+                    <input type="hidden" id="region" name="region">
+                </div>
+
                 <div class="form-group">
                     <label for="username"><i class="fas fa-at"></i> Username</label>
                     <input type="text" id="username" name="username" placeholder="Choose username" required>
@@ -231,9 +271,61 @@
     </div>
     
     <script>
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('{% static "js/service-worker.js" %}');
+        function getMyLocation() {
+            if (!navigator.geolocation) {
+                alert("Geolocation is not supported by your browser.");
+                return;
+            }
+
+            const btn = document.querySelector('.btn-location');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Detecting...';
+
+            navigator.geolocation.getCurrentPosition(
+                async (position) => {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+
+                    try {
+                        const response = await fetch(
+                            `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`
+                        );
+                        const data = await response.json();
+                        const address = data.address;
+
+                        // Prefer the most specific location available
+                        const location =
+                            address.suburb ||
+                            address.neighbourhood ||
+                            address.city_district ||
+                            address.village ||
+                            address.town ||
+                            address.city ||
+                            "Unknown";
+
+                        document.getElementById("location").innerText = location;
+                        document.getElementById("region").value = location;
+                    } catch (error) {
+                        console.error(error);
+                        alert("Could not determine your address. Please try again.");
+                    } finally {
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="fas fa-location-arrow"></i> Get My Location';
+                    }
+                },
+                (error) => {
+                    alert(error.message);
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-location-arrow"></i> Get My Location';
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 15000,
+                    maximumAge: 0
+                }
+            );
         }
     </script>
+    <script src="{% static 'js/pwa.js' %}"></script>
 </body>
 </html>

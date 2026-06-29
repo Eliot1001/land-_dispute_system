@@ -3,7 +3,12 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#667eea">
+    <meta name="description" content="View case locations on map">
+    <link rel="manifest" href="{% static 'manifest.json' %}">
+    <link rel="icon" type="image/png" href="{% static 'images/logo-192x192.png' %}">
+    <link rel="apple-touch-icon" href="{% static 'images/logo-192x192.png' %}">
     <title>Case Map - Land Dispute Management System</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -203,6 +208,10 @@
             <h2>⚖️ Land Dispute System</h2>
             <a href="{% url 'dashboard' %}"><i class="fas fa-chart-line"></i> Dashboard</a>
             <a href="{% url 'case_map' %}"><i class="fas fa-map-location-dot"></i> Case Map</a>
+            {% if request.user.is_superuser or request.user.officer_profile.level == 'high_court' %}
+            <a href="{% url 'case_reports' %}"><i class="fas fa-chart-pie"></i> Reports</a>
+            <a href="{% url 'officer_list' %}"><i class="fas fa-users"></i> Officers</a>
+            {% endif %}
             <a href="{% url 'settings' %}"><i class="fas fa-cog"></i> Settings</a>
             <a href="{% url 'logout' %}" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
         </div>
@@ -252,11 +261,24 @@
         // Initialize map centered on Tanzania
         const map = L.map('map').setView([-6.3690, 34.8888], 6);
         
-        // Add tile layer
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors',
-            maxZoom: 19
-        }).addTo(map);
+        // Street map - good for roads, place names, region context
+        const streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors, Tiles by <a href="https://www.hotosm.org/" target="_blank">Humanitarian OpenStreetMap Team</a>',
+            maxZoom: 20,
+            detectRetina: true
+        });
+
+        // Satellite imagery - shows real building structures on the ground,
+        // since OSM's community-mapped building outlines are often sparse in
+        // rural areas and the street map looks empty there even zoomed in.
+        const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+            attribution: 'Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community',
+            maxZoom: 19,
+            detectRetina: true
+        });
+
+        streetLayer.addTo(map);
+        L.control.layers({ 'Street Map': streetLayer, 'Satellite': satelliteLayer }).addTo(map);
         
         // Case data
         const casesData = {{ cases_json|safe }};
@@ -355,5 +377,6 @@
             `;
         }
     </script>
+    <script src="{% static 'js/pwa.js' %}"></script>
 </body>
 </html>

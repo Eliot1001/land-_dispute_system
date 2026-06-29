@@ -12,6 +12,9 @@ urlpatterns = [
     path('document/<int:document_id>/download/', views.download_document_officer, name='download_document_officer'),
     path('map/', views.case_map, name='case_map'),
     path('settings/', views.settings, name='settings'),
+    path('officers/', views.officer_list, name='officer_list'),
+    path('officers/register/', views.register_officer, name='register_officer'),
+    path('reports/', views.case_reports, name='case_reports'),
     
     # Citizen routes
     path('citizen/register/', views.citizen_register, name='citizen_register'),

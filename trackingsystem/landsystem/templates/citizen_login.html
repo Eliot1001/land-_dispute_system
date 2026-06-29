@@ -7,6 +7,8 @@
     <meta name="theme-color" content="#667eea">
     <meta name="description" content="Land Dispute Management System - Citizen Login">
     <link rel="manifest" href="{% static 'manifest.json' %}">
+    <link rel="icon" type="image/png" href="{% static 'images/logo-192x192.png' %}">
+    <link rel="apple-touch-icon" href="{% static 'images/logo-192x192.png' %}">
     <title>Citizen Login - Land Dispute Management System</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
@@ -233,9 +235,8 @@
     </div>
     
     <script>
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('{% static "js/service-worker.js" %}');
-        }
+        // PWA Features
     </script>
+    <script src="{% static 'js/pwa.js' %}"></script>
 </body>
 </html>

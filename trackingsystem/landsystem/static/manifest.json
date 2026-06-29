@@ -1,26 +1,54 @@
 {
-  "name": "Land Dispute System",
+  "name": "Land Dispute Management System",
   "short_name": "Land Dispute",
-  "description": "Submit and track land disputes with location mapping",
-  "start_url": "/login/",
+  "description": "Submit and track land disputes with location mapping and GPS coordinates",
+  "start_url": "/citizen/login/",
   "display": "standalone",
   "scope": "/",
   "background_color": "#ffffff",
-  "theme_color": "#007bff",
+  "theme_color": "#667eea",
   "icons": [
     {
-      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%23007bff' width='192' height='192'/><text x='96' y='110' font-size='80' font-weight='bold' fill='white' text-anchor='middle'>LD</text></svg>",
+      "src": "/static/images/logo-192x192.png",
       "sizes": "192x192",
-      "type": "image/svg+xml",
+      "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect fill='%23007bff' width='512' height='512'/><text x='256' y='300' font-size='200' font-weight='bold' fill='white' text-anchor='middle'>LD</text></svg>",
+      "src": "/static/images/logo-512x512.png",
       "sizes": "512x512",
-      "type": "image/svg+xml",
+      "type": "image/png",
       "purpose": "any"
+    },
+    {
+      "src": "/static/images/logo-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/static/images/logo-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ],
   "categories": ["productivity"],
-  "orientation": "portrait-primary"
+  "orientation": "portrait-primary",
+  "shortcuts": [
+    {
+      "name": "Submit New Case",
+      "short_name": "New Case",
+      "description": "Submit a new land dispute case",
+      "url": "/citizen/submit-case/",
+      "icons": [{"src": "/static/images/logo-192x192.png", "sizes": "192x192"}]
+    },
+    {
+      "name": "My Cases",
+      "short_name": "Cases",
+      "description": "View all your submitted cases",
+      "url": "/citizen/dashboard/",
+      "icons": [{"src": "/static/images/logo-192x192.png", "sizes": "192x192"}]
+    }
+  ]
 }

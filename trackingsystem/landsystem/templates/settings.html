@@ -3,7 +3,12 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#667eea">
+    <meta name="description" content="Manage system settings">
+    <link rel="manifest" href="{% static 'manifest.json' %}">
+    <link rel="icon" type="image/png" href="{% static 'images/logo-192x192.png' %}">
+    <link rel="apple-touch-icon" href="{% static 'images/logo-192x192.png' %}">
     <title>Settings - Land Dispute Management System</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
@@ -251,6 +256,10 @@
             <h2>⚖️ Land Dispute System</h2>
             <a href="{% url 'dashboard' %}"><i class="fas fa-chart-line"></i> Dashboard</a>
             <a href="{% url 'case_map' %}"><i class="fas fa-map-location-dot"></i> Case Map</a>
+            {% if request.user.is_superuser or request.user.officer_profile.level == 'high_court' %}
+            <a href="{% url 'case_reports' %}"><i class="fas fa-chart-pie"></i> Reports</a>
+            <a href="{% url 'officer_list' %}"><i class="fas fa-users"></i> Officers</a>
+            {% endif %}
             <a href="{% url 'settings' %}"><i class="fas fa-cog"></i> Settings</a>
             <a href="{% url 'logout' %}" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
         </div>
@@ -312,6 +321,7 @@
                         <h2><i class="fas fa-badge"></i> Officer Information</h2>
                         
                         <div class="info-box">
+                            <p><strong>Officer Level:</strong> {{ officer.get_level_display }}</p>
                             <p><strong>Officer Region:</strong> {{ officer.get_region_display }}</p>
                             <p><strong>Member Since:</strong> {{ officer.created_at|date:"F d, Y" }}</p>
                         </div>
@@ -363,5 +373,6 @@
     </div>
     
     <script src="{% static 'js/app.js' %}"></script>
+    <script src="{% static 'js/pwa.js' %}"></script>
 </body>
 </html>

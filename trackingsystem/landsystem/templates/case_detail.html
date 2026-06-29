@@ -3,7 +3,12 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#667eea">
+    <meta name="description" content="View case details and update status">
+    <link rel="manifest" href="{% static 'manifest.json' %}">
+    <link rel="icon" type="image/png" href="{% static 'images/logo-192x192.png' %}">
+    <link rel="apple-touch-icon" href="{% static 'images/logo-192x192.png' %}">
     <title>Case Details - Land Dispute Management System</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
@@ -358,6 +363,10 @@
             <h2>⚖️ Land Dispute System</h2>
             <a href="{% url 'dashboard' %}"><i class="fas fa-chart-line"></i> Dashboard</a>
             <a href="{% url 'case_map' %}"><i class="fas fa-map-location-dot"></i> Case Map</a>
+            {% if request.user.is_superuser or request.user.officer_profile.level == 'high_court' %}
+            <a href="{% url 'case_reports' %}"><i class="fas fa-chart-pie"></i> Reports</a>
+            <a href="{% url 'officer_list' %}"><i class="fas fa-users"></i> Officers</a>
+            {% endif %}
             <a href="{% url 'settings' %}"><i class="fas fa-cog"></i> Settings</a>
             <a href="{% url 'logout' %}" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
         </div>
@@ -370,6 +379,9 @@
                 <div class="case-header">
                     <h1>{{ case.title }}</h1>
                     <span class="status-badge status-{{ case.status }}">{{ case.get_status_display }}</span>
+                    <span class="status-badge" style="background-color: #e8eef9; color: #2c3e50; margin-left: 8px;">
+                        <i class="fas fa-sitemap"></i> {{ case.get_current_level_display }}
+                    </span>
                 </div>
                 
                 <div class="case-grid">
@@ -458,7 +470,7 @@
                                 <i class="fas fa-play-circle"></i> In Progress
                             </button>
                             
-                            <button type="submit" name="status" value="escalated" class="status-btn status-btn-escalated" {% if case.status == 'escalated' %}disabled{% endif %} title="Escalate to higher level">
+                            <button type="submit" name="status" value="escalated" class="status-btn status-btn-escalated" {% if case.current_level == 'high_court' %}disabled{% endif %} title="{% if case.current_level == 'high_court' %}Already at the highest level{% else %}Escalate to the next level up{% endif %}">
                                 <i class="fas fa-arrow-up"></i> Escalate
                             </button>
                             
@@ -521,5 +533,6 @@
     </div>
     
     <script src="{% static 'js/app.js' %}"></script>
+    <script src="{% static 'js/pwa.js' %}"></script>
 </body>
 </html>
