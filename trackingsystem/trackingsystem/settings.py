@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 from pathlib import Path
 import os
 import dj_database_url
+from dotenv import load_dotenv
 try:
     import psycopg2
 except ImportError:
@@ -20,6 +21,11 @@ except ImportError:
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Loads local-only secrets (DB password, etc.) from a .env file next to
+# manage.py - see .env.example. Not used in production (Render sets real
+# env vars directly); a missing .env there is fine, load_dotenv() no-ops.
+load_dotenv(BASE_DIR / '.env')
 
 
 # Quick-start development settings - unsuitable for production
@@ -109,15 +115,15 @@ if DATABASE_URL:
         'default': dj_database_url.config(conn_max_age=600, conn_health_checks=True)
     }
 else:
-    # Local development: MySQL
+    # Local development: MySQL - credentials come from .env (see .env.example)
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.mysql',
-            'NAME': 'landdispute_db',
-            'USER': 'root',
-            'PASSWORD': '2003@Lio',
-            'HOST': 'localhost',
-            'PORT': '3306',
+            'NAME': os.environ.get('DB_NAME', 'landdispute_db'),
+            'USER': os.environ.get('DB_USER', 'root'),
+            'PASSWORD': os.environ.get('DB_PASSWORD', ''),
+            'HOST': os.environ.get('DB_HOST', 'localhost'),
+            'PORT': os.environ.get('DB_PORT', '3306'),
             'OPTIONS': {
                 'charset': 'utf8mb4',
                 'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
