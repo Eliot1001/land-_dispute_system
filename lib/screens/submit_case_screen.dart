@@ -19,7 +19,6 @@ class SubmitCaseScreen extends StatefulWidget {
 class _SubmitCaseScreenState extends State<SubmitCaseScreen> {
   static const _tanzaniaCenter = ll.LatLng(-6.3690, 34.8888);
 
-  final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _mapController = MapController();
 
@@ -71,8 +70,8 @@ class _SubmitCaseScreenState extends State<SubmitCaseScreen> {
   }
 
   Future<void> _submit() async {
-    if (_titleController.text.trim().isEmpty || _descriptionController.text.trim().isEmpty) {
-      setState(() => _error = 'Please fill in the title and description');
+    if (_descriptionController.text.trim().isEmpty) {
+      setState(() => _error = 'Please fill in the description');
       return;
     }
     if (_pinned == null) {
@@ -86,7 +85,6 @@ class _SubmitCaseScreenState extends State<SubmitCaseScreen> {
     });
     try {
       final created = await ApiService.submitCase(
-        title: _titleController.text.trim(),
         description: _descriptionController.text.trim(),
         location: _detectedLocation.isNotEmpty
             ? _detectedLocation
@@ -108,7 +106,6 @@ class _SubmitCaseScreenState extends State<SubmitCaseScreen> {
 
   @override
   void dispose() {
-    _titleController.dispose();
     _descriptionController.dispose();
     super.dispose();
   }
@@ -128,11 +125,6 @@ class _SubmitCaseScreenState extends State<SubmitCaseScreen> {
             ),
             const SizedBox(height: 16),
           ],
-          TextField(
-            controller: _titleController,
-            decoration: const InputDecoration(labelText: 'Case Title', hintText: 'e.g. Boundary dispute over plot'),
-          ),
-          const SizedBox(height: 12),
           TextField(
             controller: _descriptionController,
             maxLines: 4,

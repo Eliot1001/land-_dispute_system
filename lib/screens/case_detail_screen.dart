@@ -87,6 +87,10 @@ class _CaseDetailScreenState extends State<CaseDetailScreen> {
             Expanded(
               child: Text(c.title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
             ),
+            if (c.isEscalated) ...[
+              const Icon(Icons.arrow_upward, color: Color(0xFFE74C3C), size: 18),
+              const SizedBox(width: 4),
+            ],
             Chip(
               label: Text(c.statusDisplay, style: const TextStyle(color: Colors.white)),
               backgroundColor: color,
@@ -94,6 +98,7 @@ class _CaseDetailScreenState extends State<CaseDetailScreen> {
           ],
         ),
         const SizedBox(height: 12),
+        if (c.isEscalated) ...[_escalationBanner(c), const SizedBox(height: 12)],
         if (_statusBanner(c.status) != null) ...[_statusBanner(c.status)!, const SizedBox(height: 12)],
         _infoRow(Icons.description, 'Description', c.description),
         _infoRow(Icons.location_on, 'Location', c.location),
@@ -168,6 +173,16 @@ class _CaseDetailScreenState extends State<CaseDetailScreen> {
     return Icons.insert_drive_file;
   }
 
+  Widget _escalationBanner(CaseDetail c) {
+    return _banner(
+      Icons.arrow_upward,
+      const Color(0xFFE74C3C),
+      'Case Transferred to a Higher Level',
+      'Your case has been moved to ${c.currentLevelDisplay} for further review. '
+          'It remains pending while the new office takes it up.',
+    );
+  }
+
   Widget? _statusBanner(String status) {
     final banners = {
       'in_progress': (
@@ -175,12 +190,6 @@ class _CaseDetailScreenState extends State<CaseDetailScreen> {
         const Color(0xFF3498DB),
         'Your Case is Being Processed',
         'Our officer is actively working on your case. Check back soon for updates.',
-      ),
-      'escalated': (
-        Icons.arrow_upward,
-        const Color(0xFFE74C3C),
-        'Case Escalated to Higher Authority',
-        'This case requires higher-level review and decision-making.',
       ),
       'resolved': (
         Icons.check_circle,
@@ -192,6 +201,10 @@ class _CaseDetailScreenState extends State<CaseDetailScreen> {
     final banner = banners[status];
     if (banner == null) return null;
     final (icon, color, title, subtitle) = banner;
+    return _banner(icon, color, title, subtitle);
+  }
+
+  Widget _banner(IconData icon, Color color, String title, String subtitle) {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -219,7 +232,7 @@ class _CaseDetailScreenState extends State<CaseDetailScreen> {
 
   Widget _progressSection(CaseDetail c) {
     final assigned = c.assignedOfficer != null;
-    final processing = c.status == 'in_progress' || c.status == 'escalated';
+    final processing = c.status == 'in_progress';
     final resolved = c.status == 'resolved';
 
     return Card(

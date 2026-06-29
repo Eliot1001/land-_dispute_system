@@ -175,7 +175,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
               _filterChip('pending', 'Pending'),
               _filterChip('in_progress', 'In Progress'),
               _filterChip('resolved', 'Resolved'),
-              _filterChip('escalated', 'Escalated'),
             ],
           ),
         ),
@@ -242,10 +241,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
         title: Text(c.title, maxLines: 1, overflow: TextOverflow.ellipsis),
         subtitle: Text('${c.location}\n${DateFormat.yMMMd().format(c.createdAt)}'),
         isThreeLine: true,
-        trailing: Chip(
-          label: Text(c.statusDisplay, style: const TextStyle(fontSize: 11, color: Colors.white)),
-          backgroundColor: color,
-          padding: EdgeInsets.zero,
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (c.isEscalated) ...[
+              const Icon(Icons.arrow_upward, color: Color(0xFFE74C3C), size: 14),
+              const SizedBox(width: 2),
+            ],
+            Chip(
+              label: Text(c.statusDisplay, style: const TextStyle(fontSize: 11, color: Colors.white)),
+              backgroundColor: color,
+              padding: EdgeInsets.zero,
+            ),
+          ],
         ),
       ),
     );

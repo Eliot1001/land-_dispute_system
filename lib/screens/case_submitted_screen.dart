@@ -47,7 +47,6 @@ class CaseSubmittedScreen extends StatelessWidget {
                 child: Column(
                   children: [
                     _infoRow('Case ID', '#${caseDetail.id}'),
-                    _infoRow('Case Title', caseDetail.title),
                     _infoRow('Location', caseDetail.location),
                     _infoRow('Region', caseDetail.regionDisplay),
                     _infoRow('Assigned Officer', caseDetail.assignedOfficer ?? 'Pending Assignment'),

@@ -15,7 +15,6 @@ class AppColors {
     'pending': Color(0xFFF39C12),
     'in_progress': Color(0xFF3498DB),
     'resolved': Color(0xFF27AE60),
-    'escalated': Color(0xFFE74C3C),
   };
 }
 

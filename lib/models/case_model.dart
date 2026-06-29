@@ -37,6 +37,11 @@ class CaseSummary {
   final String location;
   final DateTime createdAt;
   final DateTime updatedAt;
+  // Escalation never changes `status` (it stays pending/in_progress/resolved)
+  // - it only moves the case to a higher authority level. Use these to show
+  // that separately instead of treating "escalated" as a status value.
+  final bool isEscalated;
+  final String currentLevelDisplay;
 
   CaseSummary({
     required this.id,
@@ -48,6 +53,8 @@ class CaseSummary {
     required this.location,
     required this.createdAt,
     required this.updatedAt,
+    required this.isEscalated,
+    required this.currentLevelDisplay,
   });
 
   factory CaseSummary.fromJson(Map<String, dynamic> json) {
@@ -61,6 +68,8 @@ class CaseSummary {
       location: json['location'] ?? '',
       createdAt: DateTime.parse(json['created_at']),
       updatedAt: DateTime.parse(json['updated_at']),
+      isEscalated: json['is_escalated'] ?? false,
+      currentLevelDisplay: json['current_level_display'] ?? '',
     );
   }
 }
@@ -83,6 +92,8 @@ class CaseDetail extends CaseSummary {
     required super.location,
     required super.createdAt,
     required super.updatedAt,
+    required super.isEscalated,
+    required super.currentLevelDisplay,
     required this.description,
     required this.latitude,
     required this.longitude,
@@ -102,6 +113,8 @@ class CaseDetail extends CaseSummary {
       location: json['location'] ?? '',
       createdAt: DateTime.parse(json['created_at']),
       updatedAt: DateTime.parse(json['updated_at']),
+      isEscalated: json['is_escalated'] ?? false,
+      currentLevelDisplay: json['current_level_display'] ?? '',
       description: json['description'] ?? '',
       latitude: (json['latitude'] as num).toDouble(),
       longitude: (json['longitude'] as num).toDouble(),

@@ -18,7 +18,7 @@ class ApiService {
   /// Points at the Django backend. Use 10.0.2.2 for the Android emulator,
   /// your machine's LAN IP for a physical device on the same network, or
   /// the deployed Render URL for production.
-  static const String baseUrl = 'http://192.168.1.9:8000/api';
+  static const String baseUrl = 'http://192.168.1.2:8000/api';
 
   static String? _token;
 
@@ -148,7 +148,6 @@ class ApiService {
   }
 
   static Future<CaseDetail> submitCase({
-    required String title,
     required String description,
     required String location,
     required double latitude,
@@ -158,7 +157,6 @@ class ApiService {
     await _loadToken();
     final request = http.MultipartRequest('POST', Uri.parse('$baseUrl/cases/'));
     request.headers.addAll(_headers());
-    request.fields['title'] = title;
     request.fields['description'] = description;
     request.fields['location'] = location;
     request.fields['latitude'] = latitude.toString();
