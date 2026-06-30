@@ -44,6 +44,7 @@ ALLOWED_HOSTS = [
     "192.168.1.9",
     "192.168.1.5",
     "192.168.1.2",
+    "10.97.29.24",
     "0.0.0.0",
     "10.0.2.2",  # Android emulator's alias for the host machine
 ]
@@ -115,19 +116,15 @@ if DATABASE_URL:
         'default': dj_database_url.config(conn_max_age=600, conn_health_checks=True)
     }
 else:
-    # Local development: MySQL - credentials come from .env (see .env.example)
+    # Local development: PostgreSQL - credentials come from .env (see .env.example)
     DATABASES = {
         'default': {
-            'ENGINE': 'django.db.backends.mysql',
+            'ENGINE': os.environ.get('DB_ENGINE', 'django.db.backends.postgresql'),
             'NAME': os.environ.get('DB_NAME', 'landdispute_db'),
-            'USER': os.environ.get('DB_USER', 'root'),
+            'USER': os.environ.get('DB_USER', 'postgres'),
             'PASSWORD': os.environ.get('DB_PASSWORD', ''),
             'HOST': os.environ.get('DB_HOST', 'localhost'),
-            'PORT': os.environ.get('DB_PORT', '3306'),
-            'OPTIONS': {
-                'charset': 'utf8mb4',
-                'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
-            },
+            'PORT': os.environ.get('DB_PORT', '5432'),
         }
     }
 

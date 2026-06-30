@@ -60,10 +60,8 @@ def _install_emit_patch():
             db = kwargs.get('db') or (args[2] if len(args) > 2 else 'default')
             try:
                 from django.db import connections
-                with connections[db].cursor() as cur:
-                    cur.execute("SHOW TABLES LIKE 'users'")
-                    if cur.fetchone():
-                        _patch_state_apps(kwargs.get('apps'))
+                if 'users' in connections[db].introspection.table_names():
+                    _patch_state_apps(kwargs.get('apps'))
             except Exception:
                 pass
             return _orig(*args, **kwargs)
@@ -93,11 +91,14 @@ def _rename_tables_on_post_migrate(sender, **kwargs):
         ('django_content_type',        'content_types'),
         ('django_session',             'sessions'),
     ]
+    existing_tables = connection.introspection.table_names()
+    quote = connection.ops.quote_name
     with connection.cursor() as cursor:
         for old, new in renames:
-            cursor.execute('SHOW TABLES LIKE %s', [old])
-            if cursor.fetchone():
-                cursor.execute(f'RENAME TABLE `{old}` TO `{new}`')
+            if old in existing_tables:
+                # ALTER TABLE ... RENAME TO ... is valid in both MySQL and
+                # PostgreSQL, unlike MySQL's RENAME TABLE syntax.
+                cursor.execute(f'ALTER TABLE {quote(old)} RENAME TO {quote(new)}')
 
     # Patch live models immediately so current process uses new names
     _patch_live_models()
