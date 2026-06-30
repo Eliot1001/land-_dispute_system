@@ -56,7 +56,6 @@ Your app will be at: `https://land-dispute-system.onrender.com`
 
 ## Local Development Setup
 ```bash
-cd trackingsystem
 python -m venv venv
 venv\Scripts\activate
 pip install -r requirements.txt
