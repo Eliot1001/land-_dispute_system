@@ -3,6 +3,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../config/app_config.dart';
 import '../models/case_model.dart';
 import '../models/profile_model.dart';
 
@@ -15,10 +16,8 @@ class ApiException implements Exception {
 }
 
 class ApiService {
-  /// Points at the Django backend. Use 10.0.2.2 for the Android emulator,
-  /// your machine's LAN IP for a physical device on the same network, or
-  /// the deployed Render URL for production.
-  static const String baseUrl = 'http://192.168.1.2:8000/api';
+  /// Backend base URL. Configured in one place: [AppConfig.baseUrl].
+  static const String baseUrl = AppConfig.baseUrl;
 
   static String? _token;
 
@@ -50,7 +49,16 @@ class ApiService {
   }
 
   static dynamic _decode(http.Response response) {
-    final dynamic body = response.body.isNotEmpty ? jsonDecode(response.body) : {};
+    dynamic body;
+    try {
+      body = response.body.isNotEmpty ? jsonDecode(response.body) : {};
+    } on FormatException {
+      // Server returned HTML instead of JSON — Render free tier waking up,
+      // or a gateway/proxy error page.
+      throw ApiException(
+        'The server is starting up. Please wait 30 seconds and try again.',
+      );
+    }
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return body;
     }
