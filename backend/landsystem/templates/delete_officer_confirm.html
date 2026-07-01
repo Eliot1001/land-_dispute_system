@@ -181,6 +181,15 @@
             background: #7f8c8d;
         }
 
+        .btn-primary {
+            background: #3498db;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #2980b9;
+        }
+
         .action-buttons {
             display: flex;
             gap: 10px;
@@ -294,6 +303,7 @@
                             {% endfor %}
                         </ul>
 
+                        {% if other_officers %}
                         <div class="form-group" style="margin-top: 20px;">
                             <label for="reassign_to">Reassign their cases to</label>
                             <select id="reassign_to" name="reassign_to" required>
@@ -303,13 +313,25 @@
                                 {% endfor %}
                             </select>
                         </div>
+                        {% else %}
+                        <div class="alert alert-error" style="margin-top: 20px;">
+                            <i class="fas fa-circle-info"></i>
+                            <span>There's no other {{ officer.get_level_display }} registered for {{ officer.get_region_display }} to take over these cases. Register a new officer first, then come back to delete this one.</span>
+                        </div>
+                        {% endif %}
                     </div>
                     {% endif %}
 
                     <div class="action-buttons">
+                        {% if assigned_cases and not other_officers %}
+                        <a href="{% url 'register_officer' %}?level={{ officer.level }}&region={{ officer.region }}" class="btn btn-primary">
+                            <i class="fas fa-user-plus"></i> Register New Officer
+                        </a>
+                        {% else %}
                         <button type="submit" class="btn btn-danger">
                             <i class="fas fa-trash"></i> Delete Officer
                         </button>
+                        {% endif %}
                         <a href="{% url 'officer_list' %}" class="btn btn-secondary">
                             <i class="fas fa-times"></i> Cancel
                         </a>

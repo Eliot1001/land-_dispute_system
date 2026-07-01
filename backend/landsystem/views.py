@@ -407,6 +407,8 @@ def register_officer(request):
     return render(request, 'register_officer.html', {
         'levels': OfficerProfile.LEVEL_CHOICES,
         'regions': OfficerProfile.REGION_CHOICES,
+        'initial_level': request.GET.get('level', ''),
+        'initial_region': request.GET.get('region', ''),
     })
 
 
@@ -424,8 +426,11 @@ def delete_officer(request, officer_id):
         return redirect('officer_list')
 
     assigned_cases = Case.objects.filter(assigned_to=officer.user)
-    other_officers = get_registered_officers()
-    other_officers = [o for o in other_officers if o.pk != officer.pk]
+    # Only officers at the same level and region are valid replacements -
+    # that's how cases get routed (see assign_case_to_officer).
+    other_officers = OfficerProfile.objects.filter(
+        region=officer.region, level=officer.level,
+    ).exclude(pk=officer.pk).select_related('user')
 
     if request.method == 'POST':
         reassign_to_id = request.POST.get('reassign_to')
@@ -439,7 +444,7 @@ def delete_officer(request, officer_id):
                     'other_officers': other_officers,
                 })
 
-            new_officer = get_object_or_404(OfficerProfile, pk=reassign_to_id)
+            new_officer = get_object_or_404(other_officers, pk=reassign_to_id)
             assigned_cases.update(assigned_to=new_officer.user)
 
         officer_name = officer.user.get_full_name() or officer.user.username

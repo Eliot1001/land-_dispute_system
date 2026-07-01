@@ -300,18 +300,18 @@
                             <div class="form-group">
                                 <label for="level">Officer Level</label>
                                 <select id="level" name="level" required>
-                                    <option value="" disabled selected>Select level</option>
+                                    <option value="" disabled {% if not initial_level %}selected{% endif %}>Select level</option>
                                     {% for value, label in levels %}
-                                    <option value="{{ value }}">{{ label }}</option>
+                                    <option value="{{ value }}" {% if value == initial_level %}selected{% endif %}>{{ label }}</option>
                                     {% endfor %}
                                 </select>
                             </div>
                             <div class="form-group">
                                 <label for="region">Region</label>
                                 <select id="region" name="region" required>
-                                    <option value="" disabled selected>Select region</option>
+                                    <option value="" disabled {% if not initial_region %}selected{% endif %}>Select region</option>
                                     {% for value, label in regions %}
-                                    <option value="{{ value }}">{{ label }}</option>
+                                    <option value="{{ value }}" {% if value == initial_region %}selected{% endif %}>{{ label }}</option>
                                     {% endfor %}
                                 </select>
                             </div>
