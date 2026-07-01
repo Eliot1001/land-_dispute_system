@@ -37,17 +37,8 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-1)18lw*ebpifk*b=j+3bz
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = [
-    "land-dispute-system-ghgp.onrender.com",
-    "localhost",
-    "127.0.0.1",
-    "192.168.1.9",
-    "192.168.1.5",
-    "192.168.1.2",
-    "10.97.29.24",
-    "0.0.0.0",
-    "10.0.2.2",  # Android emulator's alias for the host machine
-]
+_allowed = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1')
+ALLOWED_HOSTS = [h.strip() for h in _allowed.split(',') if h.strip()]
 
 
 # Application definition
