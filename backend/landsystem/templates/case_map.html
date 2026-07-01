@@ -103,8 +103,37 @@
         #map {
             flex: 1;
             z-index: 1;
+            position: relative;
         }
-        
+
+        .map-loading {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 12px;
+            background: #f5f7fa;
+            z-index: 1000;
+            color: #7f8c8d;
+            font-size: 14px;
+            transition: opacity 0.3s;
+        }
+
+        .map-loading .spinner {
+            width: 36px;
+            height: 36px;
+            border: 4px solid #dfe6e9;
+            border-top-color: #3498db;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
         .map-info {
             position: fixed;
             bottom: 30px;
@@ -224,7 +253,12 @@
             </div>
             
             <!-- Map Container -->
-            <div id="map"></div>
+            <div id="map">
+                <div class="map-loading" id="mapLoading">
+                    <div class="spinner"></div>
+                    <span>Loading map…</span>
+                </div>
+            </div>
             
             <!-- Legend -->
             <div class="legend">
@@ -261,11 +295,14 @@
         // Initialize map centered on Tanzania
         const map = L.map('map').setView([-6.3690, 34.8888], 6);
         
-        // Street map - good for roads, place names, region context
-        const streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors, Tiles by <a href="https://www.hotosm.org/" target="_blank">Humanitarian OpenStreetMap Team</a>',
-            maxZoom: 20,
-            detectRetina: true
+        // Street map - good for roads, place names, region context.
+        // Uses the standard OSM tile servers (a,b,c subdomains) rather than
+        // the smaller HOT France mirror, which is slow/rate-limited under
+        // normal traffic and was making the map appear stuck while loading.
+        const streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors',
+            maxZoom: 19,
+            subdomains: 'abc'
         });
 
         // Satellite imagery - shows real building structures on the ground,
@@ -273,13 +310,24 @@
         // rural areas and the street map looks empty there even zoomed in.
         const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
             attribution: 'Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community',
-            maxZoom: 19,
-            detectRetina: true
+            maxZoom: 19
         });
 
         streetLayer.addTo(map);
         L.control.layers({ 'Street Map': streetLayer, 'Satellite': satelliteLayer }).addTo(map);
-        
+
+        // Hide the loading overlay once the visible tiles have actually
+        // painted, with a timeout fallback so it never gets stuck showing
+        // if a tile request silently hangs.
+        const mapLoading = document.getElementById('mapLoading');
+        function hideMapLoading() {
+            if (!mapLoading) return;
+            mapLoading.style.opacity = '0';
+            setTimeout(() => mapLoading.remove(), 300);
+        }
+        streetLayer.on('load', hideMapLoading);
+        setTimeout(hideMapLoading, 6000);
+
         // Case data
         const casesData = {{ cases_json|safe }};
         
