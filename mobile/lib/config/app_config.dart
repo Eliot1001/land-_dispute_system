@@ -4,7 +4,7 @@ class AppConfig {
 
   // Production — deployed Render backend (HTTPS, works on any device).
   static const String _prodUrl =
-      'https://land-dispute-system-ghgp.onrender.com/api';
+      'https://land-dispute-system.onrender.com/api';
 
   // Local dev (Android emulator) — emulator reaches the host machine at 10.0.2.2.
   // For a real device over USB: use http://127.0.0.1:8000/api and run

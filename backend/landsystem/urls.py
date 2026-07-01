@@ -14,6 +14,7 @@ urlpatterns = [
     path('settings/', views.settings, name='settings'),
     path('officers/', views.officer_list, name='officer_list'),
     path('officers/register/', views.register_officer, name='register_officer'),
+    path('officers/<int:officer_id>/delete/', views.delete_officer, name='delete_officer'),
     path('reports/', views.case_reports, name='case_reports'),
     
     # Citizen routes

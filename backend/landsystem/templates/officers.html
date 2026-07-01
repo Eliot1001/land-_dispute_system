@@ -188,6 +188,17 @@
             padding: 60px 20px;
             color: #7f8c8d;
         }
+
+        .btn-delete {
+            background: #e74c3c;
+            color: white;
+            padding: 8px 14px;
+            font-size: 13px;
+        }
+
+        .btn-delete:hover {
+            background: #c0392b;
+        }
     </style>
 </head>
 <body>
@@ -234,6 +245,7 @@
                             <th>Level</th>
                             <th>Region</th>
                             <th>Phone</th>
+                            <th></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -244,6 +256,13 @@
                             <td><span class="level-badge level-{{ officer.level }}">{{ officer.get_level_display }}</span></td>
                             <td>{{ officer.get_region_display }}</td>
                             <td>{{ officer.phone|default:"-" }}</td>
+                            <td>
+                                {% if officer.user != request.user %}
+                                <a href="{% url 'delete_officer' officer.id %}" class="btn btn-delete">
+                                    <i class="fas fa-trash"></i> Delete
+                                </a>
+                                {% endif %}
+                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>
