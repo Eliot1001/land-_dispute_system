@@ -14,7 +14,7 @@ import math
 
 # Escalation hierarchy, lowest to highest. Matches OfficerProfile.LEVEL_CHOICES
 # and Case.LEVEL_CHOICES.
-LEVEL_ORDER = ['village', 'ward', 'district_land_officer', 'land_housing_tribunal', 'high_court']
+LEVEL_ORDER = ['village', 'ward', 'district_land_officer', 'regional', 'high_court']
 
 
 # Region coordinates for mapping

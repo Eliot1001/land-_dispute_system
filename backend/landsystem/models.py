@@ -37,7 +37,7 @@ class OfficerProfile(models.Model):
         ('village', 'Village Officer'),
         ('ward', 'Ward Officer'),
         ('district_land_officer', 'District Land Officer'),
-        ('land_housing_tribunal', 'Land and Housing Tribunal'),
+        ('regional', 'Regional Officer'),
         ('high_court', 'High Court'),
     ]
 
