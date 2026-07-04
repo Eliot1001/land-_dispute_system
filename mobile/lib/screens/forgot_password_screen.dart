@@ -10,47 +10,18 @@ class ForgotPasswordScreen extends StatefulWidget {
 
 class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   final _usernameController = TextEditingController();
-  final _emailController = TextEditingController();
-  final _codeController = TextEditingController();
+  final _identifierController = TextEditingController();
   final _newPasswordController = TextEditingController();
   final _newPasswordConfirmController = TextEditingController();
 
   bool _loading = false;
   String? _error;
-  String? _info;
-  bool _codeRequested = false;
   bool _success = false;
 
-  Future<void> _requestCode() async {
-    if (_usernameController.text.trim().isEmpty || _emailController.text.trim().isEmpty) {
-      setState(() => _error = 'Please enter your username and email');
-      return;
-    }
-
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
-    try {
-      await ApiService.requestPasswordResetCode(
-        username: _usernameController.text.trim(),
-        email: _emailController.text.trim(),
-      );
-      if (!mounted) return;
-      setState(() {
-        _codeRequested = true;
-        _info = 'If that account exists, a reset code has been emailed to it. Enter the code below.';
-      });
-    } catch (e) {
-      setState(() => _error = e.toString());
-    } finally {
-      if (mounted) setState(() => _loading = false);
-    }
-  }
-
-  Future<void> _confirmReset() async {
+  Future<void> _submit() async {
     if ([
-      _codeController.text,
+      _usernameController.text,
+      _identifierController.text,
       _newPasswordController.text,
       _newPasswordConfirmController.text,
     ].any((v) => v.trim().isEmpty)) {
@@ -67,9 +38,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       _error = null;
     });
     try {
-      await ApiService.confirmPasswordReset(
+      await ApiService.forgotPassword(
         username: _usernameController.text.trim(),
-        code: _codeController.text.trim(),
+        identifier: _identifierController.text.trim(),
         newPassword: _newPasswordController.text,
         newPasswordConfirm: _newPasswordConfirmController.text,
       );
@@ -85,8 +56,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   @override
   void dispose() {
     _usernameController.dispose();
-    _emailController.dispose();
-    _codeController.dispose();
+    _identifierController.dispose();
     _newPasswordController.dispose();
     _newPasswordConfirmController.dispose();
     super.dispose();
@@ -116,6 +86,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 child: const Text('Back to Login'),
               ),
             ] else ...[
+              const Text(
+                'Enter your username and the phone number or email you registered with, then choose a new password.',
+              ),
+              const SizedBox(height: 16),
               if (_error != null) ...[
                 Container(
                   padding: const EdgeInsets.all(12),
@@ -124,77 +98,38 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 ),
                 const SizedBox(height: 16),
               ],
-              if (_info != null) ...[
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(color: Colors.blue.shade50, borderRadius: BorderRadius.circular(8)),
-                  child: Text(_info!, style: TextStyle(color: Colors.blue.shade800)),
-                ),
-                const SizedBox(height: 16),
-              ],
-              if (!_codeRequested) ...[
-                const Text('Enter your username and registered email. We will email you a reset code.'),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: _usernameController,
-                  decoration: const InputDecoration(labelText: 'Username'),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: _emailController,
-                  keyboardType: TextInputType.emailAddress,
-                  decoration: const InputDecoration(labelText: 'Registered Email'),
-                ),
-                const SizedBox(height: 20),
-                ElevatedButton(
-                  onPressed: _loading ? null : _requestCode,
-                  child: _loading
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                        )
-                      : const Text('Send Reset Code'),
-                ),
-              ] else ...[
-                TextField(
-                  controller: _codeController,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: '6-Digit Code'),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: _newPasswordController,
-                  obscureText: true,
-                  decoration: const InputDecoration(labelText: 'New Password'),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: _newPasswordConfirmController,
-                  obscureText: true,
-                  decoration: const InputDecoration(labelText: 'Confirm New Password'),
-                ),
-                const SizedBox(height: 20),
-                ElevatedButton(
-                  onPressed: _loading ? null : _confirmReset,
-                  child: _loading
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                        )
-                      : const Text('Reset Password'),
-                ),
-                TextButton(
-                  onPressed: _loading
-                      ? null
-                      : () => setState(() {
-                            _codeRequested = false;
-                            _info = null;
-                          }),
-                  child: const Text('Use a different username or email'),
-                ),
-              ],
+              TextField(
+                controller: _usernameController,
+                decoration: const InputDecoration(labelText: 'Username'),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _identifierController,
+                decoration: const InputDecoration(labelText: 'Registered Phone Number or Email'),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _newPasswordController,
+                obscureText: true,
+                decoration: const InputDecoration(labelText: 'New Password'),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _newPasswordConfirmController,
+                obscureText: true,
+                decoration: const InputDecoration(labelText: 'Confirm New Password'),
+              ),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: _loading ? null : _submit,
+                child: _loading
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      )
+                    : const Text('Reset Password'),
+              ),
             ],
           ],
         ),

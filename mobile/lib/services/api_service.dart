@@ -104,28 +104,17 @@ class ApiService {
     return CitizenProfile.fromJson(data['profile']);
   }
 
-  static Future<void> requestPasswordResetCode({
+  static Future<void> forgotPassword({
     required String username,
-    required String email,
-  }) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/auth/forgot-password/request/'),
-      body: {'username': username, 'email': email},
-    );
-    _decode(response);
-  }
-
-  static Future<void> confirmPasswordReset({
-    required String username,
-    required String code,
+    required String identifier,
     required String newPassword,
     required String newPasswordConfirm,
   }) async {
     final response = await http.post(
-      Uri.parse('$baseUrl/auth/forgot-password/confirm/'),
+      Uri.parse('$baseUrl/auth/forgot-password/'),
       body: {
         'username': username,
-        'code': code,
+        'identifier': identifier,
         'new_password': newPassword,
         'new_password_confirm': newPasswordConfirm,
       },

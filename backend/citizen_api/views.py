@@ -1,6 +1,5 @@
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
-from django.core.mail import send_mail
 from django.db.models import Q
 from django.http import FileResponse
 from django.shortcuts import get_object_or_404
@@ -12,7 +11,6 @@ from rest_framework.response import Response
 
 from landsystem.models import Case, CaseDocument, Citizen
 from landsystem.views import assign_case_to_officer, get_region_from_coordinates
-from .models import PasswordResetCode
 
 
 def serialize_profile(citizen):
@@ -131,75 +129,38 @@ def login_view(request):
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
-def forgot_password_request(request):
-    """Step 1 of password reset: if the username and email match a citizen
-    account, email a 6-digit code to that address. Always returns the same
-    generic message either way, so this can't be used to check which
-    usernames exist."""
+def forgot_password(request):
+    """Reset a citizen's password after matching their username against
+    their registered phone number or email. No code is sent anywhere -
+    matching those details is treated as proof of ownership."""
     username = request.data.get('username', '').strip()
-    email = request.data.get('email', '').strip()
-
-    if not username or not email:
-        return Response({'error': 'Please provide your username and email'}, status=status.HTTP_400_BAD_REQUEST)
-
-    generic_response = Response({'message': 'If that account exists, a reset code has been sent to its email.'})
-
-    try:
-        user = User.objects.get(username=username)
-        user.citizen_profile
-    except (User.DoesNotExist, Citizen.DoesNotExist):
-        return generic_response
-
-    if not user.email or user.email.lower() != email.lower():
-        return generic_response
-
-    code = PasswordResetCode.generate_code()
-    PasswordResetCode.objects.create(user=user, code=code)
-
-    send_mail(
-        subject='Your Land Dispute System password reset code',
-        message=f'Your password reset code is {code}. It expires in 15 minutes.\n\n'
-                f"If you didn't request this, you can safely ignore this email.",
-        from_email=None,
-        recipient_list=[user.email],
-        fail_silently=False,
-    )
-
-    return generic_response
-
-
-@api_view(['POST'])
-@permission_classes([AllowAny])
-def forgot_password_confirm(request):
-    """Step 2 of password reset: verify the emailed code and set the new
-    password."""
-    username = request.data.get('username', '').strip()
-    code = request.data.get('code', '').strip()
+    identifier = request.data.get('identifier', '').strip()
     new_password = request.data.get('new_password')
     new_password_confirm = request.data.get('new_password_confirm')
 
-    if not all([username, code, new_password, new_password_confirm]):
+    if not all([username, identifier, new_password, new_password_confirm]):
         return Response({'error': 'Please fill in all fields'}, status=status.HTTP_400_BAD_REQUEST)
 
     if new_password != new_password_confirm:
         return Response({'error': 'Passwords do not match'}, status=status.HTTP_400_BAD_REQUEST)
 
+    generic_error = Response(
+        {'error': 'No account found matching that username and phone/email'},
+        status=status.HTTP_404_NOT_FOUND,
+    )
+
     try:
         user = User.objects.get(username=username)
-    except User.DoesNotExist:
-        return Response({'error': 'Invalid or expired code'}, status=status.HTTP_400_BAD_REQUEST)
+        citizen = user.citizen_profile
+    except (User.DoesNotExist, Citizen.DoesNotExist):
+        return generic_error
 
-    reset_code = (
-        PasswordResetCode.objects
-        .filter(user=user, code=code, used=False)
-        .order_by('-created_at')
-        .first()
+    identifier_matches = (
+        citizen.phone == identifier
+        or (user.email and user.email.lower() == identifier.lower())
     )
-    if reset_code is None or reset_code.is_expired():
-        return Response({'error': 'Invalid or expired code'}, status=status.HTTP_400_BAD_REQUEST)
-
-    reset_code.used = True
-    reset_code.save(update_fields=['used'])
+    if not identifier_matches:
+        return generic_error
 
     user.set_password(new_password)
     user.save()
