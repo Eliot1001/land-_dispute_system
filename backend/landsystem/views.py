@@ -355,7 +355,10 @@ def officer_list(request):
     if not is_admin_user(request.user):
         return HttpResponseForbidden("Only administrators can view officers.")
 
-    return render(request, 'officers.html', {'officers': get_registered_officers()})
+    return render(request, 'officers.html', {
+        'officers': get_registered_officers(),
+        'levels_requiring_jurisdiction': LEVELS_REQUIRING_JURISDICTION,
+    })
 
 
 @login_required(login_url='login')
@@ -429,6 +432,39 @@ def register_officer(request):
         'initial_level': request.GET.get('level', ''),
         'initial_region': request.GET.get('region', ''),
     })
+
+
+@login_required(login_url='login')
+def edit_officer_jurisdiction(request, officer_id):
+    """Admin-only: update the specific village/ward/district an officer
+    serves. Only the jurisdiction can be changed here - level, region, and
+    login details stay fixed once an officer is registered."""
+    if not is_admin_user(request.user):
+        return HttpResponseForbidden("Only administrators can edit officers.")
+
+    officer = get_object_or_404(OfficerProfile, pk=officer_id)
+
+    if officer.level not in LEVELS_REQUIRING_JURISDICTION:
+        messages.error(request, f'{officer.get_level_display()} officers cover the whole region, so there\'s no jurisdiction to set.')
+        return redirect('officer_list')
+
+    jurisdiction_label = officer.get_level_display().replace(' Officer', '')
+
+    if request.method == 'POST':
+        jurisdiction = request.POST.get('jurisdiction', '').strip()
+        if not jurisdiction:
+            return render(request, 'edit_officer_jurisdiction.html', {
+                'officer': officer,
+                'jurisdiction_label': jurisdiction_label,
+                'error': f'Please enter which {jurisdiction_label.lower()} this officer serves.',
+            })
+
+        officer.jurisdiction = jurisdiction
+        officer.save()
+        messages.success(request, f'Updated jurisdiction for {officer.user.get_full_name() or officer.user.username}.')
+        return redirect('officer_list')
+
+    return render(request, 'edit_officer_jurisdiction.html', {'officer': officer, 'jurisdiction_label': jurisdiction_label})
 
 
 @login_required(login_url='login')
