@@ -52,8 +52,12 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'rest_framework.authtoken',
-    'landsystem',
+    # citizen_api must come before landsystem: landsystem's post_migrate
+    # handler renames the auth/contenttype tables (see landsystem/apps.py),
+    # so any app listed after it would have its content types/permissions
+    # created against the old (already-renamed-away) table names.
     'citizen_api',
+    'landsystem',
 ]
 
 REST_FRAMEWORK = {
@@ -160,4 +164,20 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 # Media files (User uploads)
 MEDIA_URL = 'media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+
+# Email (password reset codes) - Gmail SMTP with an App Password.
+# See .env.example for the required EMAIL_HOST_USER/EMAIL_HOST_PASSWORD.
+# Falls back to printing emails to the console when unset, so local dev
+# doesn't need real credentials.
+if os.environ.get('EMAIL_HOST_USER'):
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+    EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp.gmail.com')
+    EMAIL_PORT = int(os.environ.get('EMAIL_PORT', '587'))
+    EMAIL_USE_TLS = True
+    EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
+    EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
+    DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', EMAIL_HOST_USER)
+else:
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
