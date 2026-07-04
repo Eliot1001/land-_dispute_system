@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
-import '../services/geocode_service.dart';
-import '../services/location_service.dart';
-import '../theme.dart';
 import 'dashboard_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -21,26 +18,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _passwordController = TextEditingController();
   final _passwordConfirmController = TextEditingController();
 
-  String _detectedRegion = '';
-  bool _detectingLocation = false;
   bool _loading = false;
   String? _error;
-
-  Future<void> _getMyLocation() async {
-    setState(() {
-      _detectingLocation = true;
-      _error = null;
-    });
-    try {
-      final position = await LocationService.getBestLocation();
-      final region = await GeocodeService.reverseGeocode(position.latitude, position.longitude);
-      setState(() => _detectedRegion = region);
-    } catch (e) {
-      setState(() => _error = e.toString());
-    } finally {
-      if (mounted) setState(() => _detectingLocation = false);
-    }
-  }
 
   Future<void> _register() async {
     if (_passwordController.text != _passwordConfirmController.text) {
@@ -71,7 +50,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
         phone: _phoneController.text.trim(),
         username: _usernameController.text.trim(),
         password: _passwordController.text,
-        region: _detectedRegion,
       );
       if (!mounted) return;
       Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const DashboardScreen()));
@@ -157,20 +135,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
               obscureText: true,
               decoration: const InputDecoration(labelText: 'Confirm Password'),
             ),
-            const SizedBox(height: 16),
-            const Text('Region (optional)', style: TextStyle(fontWeight: FontWeight.w600)),
-            const SizedBox(height: 8),
-            OutlinedButton.icon(
-              onPressed: _detectingLocation ? null : _getMyLocation,
-              icon: _detectingLocation
-                  ? const SizedBox(height: 16, width: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                  : const Icon(Icons.my_location),
-              label: Text(_detectingLocation ? 'Detecting...' : 'Get My Location'),
-            ),
-            if (_detectedRegion.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Text(_detectedRegion, style: const TextStyle(color: AppColors.secondary, fontWeight: FontWeight.w600)),
-            ],
             const SizedBox(height: 24),
             ElevatedButton(
               onPressed: _loading ? null : _register,

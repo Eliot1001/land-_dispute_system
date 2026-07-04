@@ -1,8 +1,13 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'screens/splash_screen.dart';
 import 'theme.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  // No FirebaseOptions passed - on Android this reads configuration from
+  // android/app/google-services.json automatically at build time.
+  await Firebase.initializeApp();
   runApp(const LandDisputeCitizenApp());
 }
 

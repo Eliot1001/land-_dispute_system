@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "655615175142",
+    "project_id": "land-dispute-system-bc830",
+    "storage_bucket": "land-dispute-system-bc830.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:655615175142:android:2da03a754cfcc15cc94e27",
+        "android_client_info": {
+          "package_name": "com.landdispute.land_dispute_citizen"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBdv_NHB0imFSph2MJgTyRsez8s5ngFMtM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
