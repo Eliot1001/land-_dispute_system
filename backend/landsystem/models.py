@@ -44,6 +44,11 @@ class OfficerProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='officer_profile')
     region = models.CharField(max_length=50, choices=REGION_CHOICES)
     level = models.CharField(max_length=30, choices=LEVEL_CHOICES, default='village')
+    # The specific village/ward/district name this officer serves within
+    # their region - e.g. "Chamwino" for a village officer, "Makole" for a
+    # ward officer. Not applicable for Regional/High Court officers, who
+    # cover the whole region.
+    jurisdiction = models.CharField(max_length=255, blank=True)
     phone = models.CharField(max_length=20)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -51,7 +56,8 @@ class OfficerProfile(models.Model):
         db_table = 'officers'
 
     def __str__(self):
-        return f"{self.get_level_display()} - {self.user.username} ({self.get_region_display()})"
+        place = f"{self.jurisdiction}, {self.get_region_display()}" if self.jurisdiction else self.get_region_display()
+        return f"{self.get_level_display()} - {self.user.username} ({place})"
 
 
 class Case(models.Model):

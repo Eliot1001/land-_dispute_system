@@ -243,6 +243,7 @@
                             <th>Name</th>
                             <th>Username</th>
                             <th>Level</th>
+                            <th>Jurisdiction</th>
                             <th>Region</th>
                             <th>Phone</th>
                             <th></th>
@@ -254,6 +255,7 @@
                             <td>{{ officer.user.get_full_name|default:officer.user.username }}</td>
                             <td>{{ officer.user.username }}</td>
                             <td><span class="level-badge level-{{ officer.level }}">{{ officer.get_level_display }}</span></td>
+                            <td>{{ officer.jurisdiction|default:"-" }}</td>
                             <td>{{ officer.get_region_display }}</td>
                             <td>{{ officer.phone|default:"-" }}</td>
                             <td>

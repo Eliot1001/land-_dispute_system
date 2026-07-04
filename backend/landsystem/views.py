@@ -16,6 +16,11 @@ import math
 # and Case.LEVEL_CHOICES.
 LEVEL_ORDER = ['village', 'ward', 'district_land_officer', 'regional', 'high_court']
 
+# These levels serve a specific place within their region, so registering one
+# requires naming it (e.g. "Chamwino" village, "Makole" ward). Regional/High
+# Court officers cover the whole region, so no specific place applies.
+LEVELS_REQUIRING_JURISDICTION = ['village', 'ward', 'district_land_officer']
+
 
 # Region coordinates for mapping
 REGION_COORDS = {
@@ -372,6 +377,7 @@ def register_officer(request):
         password_confirm = request.POST.get('password_confirm')
         level = request.POST.get('level')
         region = request.POST.get('region')
+        jurisdiction = request.POST.get('jurisdiction', '').strip()
 
         common_context = {
             'levels': OfficerProfile.LEVEL_CHOICES,
@@ -392,6 +398,18 @@ def register_officer(request):
         if level not in valid_levels or region not in valid_regions:
             return render(request, 'register_officer.html', {'error': 'Invalid level or region', **common_context})
 
+        if level in LEVELS_REQUIRING_JURISDICTION and not jurisdiction:
+            level_label = dict(OfficerProfile.LEVEL_CHOICES)[level]
+            return render(request, 'register_officer.html', {
+                'error': f'Please enter which {level_label.replace(" Officer", "").lower()} this officer serves.',
+                **common_context,
+            })
+
+        # Regional/High Court officers cover the whole region, not a
+        # specific place, so any jurisdiction entered for them is ignored.
+        if level not in LEVELS_REQUIRING_JURISDICTION:
+            jurisdiction = ''
+
         user = User.objects.create_user(
             username=username,
             email=email,
@@ -399,9 +417,10 @@ def register_officer(request):
             first_name=first_name,
             last_name=last_name,
         )
-        officer = OfficerProfile.objects.create(user=user, region=region, level=level, phone=phone)
+        officer = OfficerProfile.objects.create(user=user, region=region, level=level, jurisdiction=jurisdiction, phone=phone)
 
-        messages.success(request, f'{first_name} {last_name} registered as {officer.get_level_display()} for {officer.get_region_display()}.')
+        place = f'{jurisdiction}, {officer.get_region_display()}' if jurisdiction else officer.get_region_display()
+        messages.success(request, f'{first_name} {last_name} registered as {officer.get_level_display()} for {place}.')
         return redirect('officer_list')
 
     return render(request, 'register_officer.html', {
