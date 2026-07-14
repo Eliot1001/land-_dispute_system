@@ -5,11 +5,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#667eea">
-    <meta name="description" content="System-wide case reports">
+    <meta name="description" content="Official system-wide case status report">
     <link rel="manifest" href="{% static 'manifest.json' %}">
     <link rel="icon" type="image/png" href="{% static 'images/logo-192x192.png' %}">
     <link rel="apple-touch-icon" href="{% static 'images/logo-192x192.png' %}">
-    <title>Reports - Land Dispute Management System</title>
+    <title>Case Status Report - Land Dispute Management System</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
     <style>
@@ -80,30 +80,122 @@
             padding: 30px;
         }
 
-        .header {
+        /* Official letterhead */
+        .letterhead {
             background: white;
-            padding: 25px;
             border-radius: 10px;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
             margin-bottom: 30px;
+            border-top: 5px solid #2c3e50;
+            overflow: hidden;
         }
 
-        .header h1 {
-            color: #2c3e50;
-            font-size: 32px;
-            margin-bottom: 10px;
+        .letterhead-body {
+            padding: 25px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 20px;
+            flex-wrap: wrap;
         }
 
-        .header p {
+        .letterhead-emblem {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .letterhead-emblem .emblem-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            color: #f1c40f;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 26px;
+            flex-shrink: 0;
+        }
+
+        .letterhead-titles .eyebrow {
+            font-size: 11px;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
             color: #7f8c8d;
-            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .letterhead-titles h1 {
+            color: #2c3e50;
+            font-size: 24px;
+            margin: 4px 0 2px;
+        }
+
+        .letterhead-titles p {
+            color: #7f8c8d;
+            font-size: 13px;
+        }
+
+        .letterhead-meta {
+            text-align: right;
+            font-size: 13px;
+            color: #7f8c8d;
+            min-width: 220px;
+        }
+
+        .letterhead-meta strong {
+            color: #2c3e50;
+        }
+
+        .letterhead-meta .report-ref {
+            font-family: 'Courier New', monospace;
+            background: #f5f7fa;
+            padding: 3px 8px;
+            border-radius: 4px;
+            display: inline-block;
+            margin-top: 4px;
+        }
+
+        .print-btn {
+            margin-top: 12px;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 5px;
+            background: #2c3e50;
+            color: white;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .print-btn:hover {
+            background: #1a252f;
+        }
+
+        .section-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #2c3e50;
+            font-size: 17px;
+            margin: 34px 0 16px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #ecf0f1;
+        }
+
+        .section-title:first-of-type {
+            margin-top: 0;
         }
 
         .kpi-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
             gap: 20px;
-            margin-bottom: 30px;
+            margin-bottom: 10px;
         }
 
         .kpi-card {
@@ -115,15 +207,17 @@
         }
 
         .kpi-card .kpi-value {
-            font-size: 28px;
+            font-size: 26px;
             font-weight: 700;
             color: #2c3e50;
         }
 
         .kpi-card .kpi-label {
-            font-size: 13px;
+            font-size: 12px;
             color: #7f8c8d;
             margin-top: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
         }
 
         .chart-grid {
@@ -141,7 +235,7 @@
 
         .chart-card h3 {
             color: #2c3e50;
-            font-size: 16px;
+            font-size: 15px;
             margin-bottom: 15px;
             display: flex;
             align-items: center;
@@ -149,13 +243,98 @@
         }
 
         .chart-card canvas {
-            max-height: 280px;
+            max-height: 260px;
+        }
+
+        /* Formal statistical tables, government-report style */
+        .data-table-card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            padding: 20px 24px;
+        }
+
+        .data-table-card h3 {
+            color: #2c3e50;
+            font-size: 15px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .data-table th {
+            text-align: left;
+            padding: 10px 12px;
+            font-size: 12px;
+            color: #ffffff;
+            background: #2c3e50;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+        }
+
+        .data-table th.numeric,
+        .data-table td.numeric {
+            text-align: right;
+        }
+
+        .data-table td {
+            padding: 10px 12px;
+            font-size: 13.5px;
+            color: #2c3e50;
+            border-bottom: 1px solid #ecf0f1;
+        }
+
+        .data-table tbody tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+
+        .data-table tfoot td {
+            font-weight: 700;
+            border-top: 2px solid #2c3e50;
+            border-bottom: none;
+            color: #2c3e50;
         }
 
         .empty-state {
             text-align: center;
             padding: 60px 20px;
             color: #7f8c8d;
+        }
+
+        .report-footer {
+            margin-top: 34px;
+            padding-top: 18px;
+            border-top: 2px solid #ecf0f1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            color: #95a5a6;
+            font-size: 12px;
+        }
+
+        @media print {
+            .sidebar, .print-btn {
+                display: none !important;
+            }
+            .main-content {
+                margin-left: 0;
+                padding: 0;
+            }
+            body {
+                background: white;
+            }
+            .letterhead, .data-table-card, .chart-card, .kpi-card {
+                box-shadow: none;
+                border: 1px solid #ddd;
+            }
         }
     </style>
 </head>
@@ -175,50 +354,192 @@
 
         <!-- Main Content -->
         <div class="main-content">
-            <div class="header">
-                <h1><i class="fas fa-chart-pie"></i> Reports</h1>
-                <p>System-wide overview of how cases are being resolved across every level and region</p>
+            <div class="letterhead">
+                <div class="letterhead-body">
+                    <div class="letterhead-emblem">
+                        <div class="emblem-icon"><i class="fas fa-scale-balanced"></i></div>
+                        <div class="letterhead-titles">
+                            <div class="eyebrow">Land Dispute Management System</div>
+                            <h1>Official Case Status Report</h1>
+                            <p>Consolidated statistics on cases filed, resolved, and citizen feedback nationwide</p>
+                        </div>
+                    </div>
+                    <div class="letterhead-meta">
+                        <div>Generated: <strong>{{ generated_at|date:"F d, Y \a\t H:i" }}</strong></div>
+                        <div>Prepared by: <strong>{{ generated_by }}</strong></div>
+                        <div class="report-ref">REF: LDS-{{ generated_at|date:"Ymd-Hi" }}</div>
+                        <br>
+                        <button class="print-btn" onclick="window.print()"><i class="fas fa-print"></i> Print / Export Report</button>
+                    </div>
+                </div>
             </div>
 
             {% if summary.total %}
+            <div class="section-title"><i class="fas fa-list-check"></i> I. Executive Summary</div>
             <div class="kpi-grid">
                 <div class="kpi-card" style="border-left-color: #3498db;">
                     <div class="kpi-value">{{ summary.total }}</div>
-                    <div class="kpi-label">Total Cases</div>
+                    <div class="kpi-label">Total Cases Filed</div>
                 </div>
                 <div class="kpi-card" style="border-left-color: #27ae60;">
                     <div class="kpi-value">{{ summary.resolved }}</div>
-                    <div class="kpi-label">Resolved</div>
+                    <div class="kpi-label">Solved Cases</div>
+                </div>
+                <div class="kpi-card" style="border-left-color: #e74c3c;">
+                    <div class="kpi-value">{{ summary.unresolved }}</div>
+                    <div class="kpi-label">Unsolved Cases</div>
+                </div>
+                <div class="kpi-card" style="border-left-color: #f39c12;">
+                    <div class="kpi-value">{{ summary.pending }}</div>
+                    <div class="kpi-label">Pending</div>
+                </div>
+                <div class="kpi-card" style="border-left-color: #3498db;">
+                    <div class="kpi-value">{{ summary.in_progress }}</div>
+                    <div class="kpi-label">In Progress</div>
+                </div>
+                <div class="kpi-card" style="border-left-color: #e67e22;">
+                    <div class="kpi-value">{{ summary.escalated }}</div>
+                    <div class="kpi-label">Escalated</div>
                 </div>
                 <div class="kpi-card" style="border-left-color: #9b59b6;">
                     <div class="kpi-value">{{ summary.resolution_rate }}%</div>
                     <div class="kpi-label">Resolution Rate</div>
                 </div>
-                <div class="kpi-card" style="border-left-color: #f39c12;">
+                <div class="kpi-card" style="border-left-color: #16a085;">
+                    <div class="kpi-value">{% if summary.avg_resolution_days is not None %}{{ summary.avg_resolution_days }}{% else %}&mdash;{% endif %}</div>
+                    <div class="kpi-label">Avg. Days to Resolve</div>
+                </div>
+                <div class="kpi-card" style="border-left-color: #2980b9;">
                     <div class="kpi-value">{{ summary.feedback_total }}</div>
-                    <div class="kpi-label">Feedback Submitted</div>
+                    <div class="kpi-label">Citizen Feedback Received</div>
                 </div>
             </div>
 
+            <div class="section-title"><i class="fas fa-chart-pie"></i> II. Case Status Breakdown</div>
             <div class="chart-grid">
                 <div class="chart-card">
-                    <h3><i class="fas fa-chart-pie"></i> Cases by Status</h3>
+                    <h3><i class="fas fa-chart-pie"></i> Distribution by Status</h3>
                     <canvas id="statusChart"></canvas>
                 </div>
+                <div class="data-table-card">
+                    <h3><i class="fas fa-table"></i> Status Summary Table</h3>
+                    <table class="data-table">
+                        <thead>
+                            <tr><th>Status</th><th class="numeric">Cases</th><th class="numeric">% of Total</th></tr>
+                        </thead>
+                        <tbody>
+                            {% for row in summary.by_status %}
+                            <tr><td>{{ row.label }}</td><td class="numeric">{{ row.count }}</td><td class="numeric">{{ row.percent }}%</td></tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot>
+                            <tr><td>Total</td><td class="numeric">{{ summary.total }}</td><td class="numeric">100%</td></tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+
+            <div class="section-title"><i class="fas fa-sitemap"></i> III. Cases by Hierarchy Level</div>
+            <div class="chart-grid">
                 <div class="chart-card">
-                    <h3><i class="fas fa-sitemap"></i> Cases by Hierarchy Level</h3>
+                    <h3><i class="fas fa-sitemap"></i> Distribution by Level</h3>
                     <canvas id="levelChart"></canvas>
                 </div>
+                <div class="data-table-card">
+                    <h3><i class="fas fa-table"></i> Level Summary Table</h3>
+                    <table class="data-table">
+                        <thead>
+                            <tr><th>Hierarchy Level</th><th class="numeric">Cases</th><th class="numeric">% of Total</th></tr>
+                        </thead>
+                        <tbody>
+                            {% for row in summary.by_level %}
+                            <tr><td>{{ row.label }}</td><td class="numeric">{{ row.count }}</td><td class="numeric">{{ row.percent }}%</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="section-title"><i class="fas fa-map-marker-alt"></i> IV. Cases by Administrative Region</div>
+            <div class="chart-grid">
                 <div class="chart-card">
-                    <h3><i class="fas fa-map-marker-alt"></i> Cases by Region</h3>
+                    <h3><i class="fas fa-map-marker-alt"></i> Distribution by Region</h3>
                     <canvas id="regionChart"></canvas>
                 </div>
-                {% if summary.feedback_total %}
+                <div class="data-table-card">
+                    <h3><i class="fas fa-table"></i> Region Summary Table</h3>
+                    <table class="data-table">
+                        <thead>
+                            <tr><th>Region</th><th class="numeric">Cases</th><th class="numeric">% of Total</th></tr>
+                        </thead>
+                        <tbody>
+                            {% for row in summary.by_region %}
+                            <tr><td>{{ row.label }}</td><td class="numeric">{{ row.count }}</td><td class="numeric">{{ row.percent }}%</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            {% if summary.officer_performance %}
+            <div class="section-title"><i class="fas fa-user-tie"></i> V. Officer Caseload &amp; Performance</div>
+            <div class="data-table-card">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Officer</th>
+                            <th>Level</th>
+                            <th>Region</th>
+                            <th class="numeric">Assigned</th>
+                            <th class="numeric">Resolved</th>
+                            <th class="numeric">Resolution Rate</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in summary.officer_performance %}
+                        <tr>
+                            <td>{{ row.name }}</td>
+                            <td>{{ row.level }}</td>
+                            <td>{{ row.region }}</td>
+                            <td class="numeric">{{ row.assigned }}</td>
+                            <td class="numeric">{{ row.resolved }}</td>
+                            <td class="numeric">{% widthratio row.resolved row.assigned 100 %}%</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+
+            {% if summary.feedback_total %}
+            <div class="section-title"><i class="fas fa-comment-dots"></i> VI. Citizen Feedback Summary</div>
+            <div class="chart-grid">
                 <div class="chart-card">
-                    <h3><i class="fas fa-comment-dots"></i> Citizen Feedback</h3>
+                    <h3><i class="fas fa-comment-dots"></i> Feedback Distribution</h3>
                     <canvas id="feedbackChart"></canvas>
                 </div>
-                {% endif %}
+                <div class="data-table-card">
+                    <h3><i class="fas fa-table"></i> Feedback Summary Table</h3>
+                    <table class="data-table">
+                        <thead>
+                            <tr><th>Comment</th><th class="numeric">Responses</th><th class="numeric">% of Total</th></tr>
+                        </thead>
+                        <tbody>
+                            {% for row in summary.by_feedback %}
+                            <tr><td>{{ row.label }}</td><td class="numeric">{{ row.count }}</td><td class="numeric">{{ row.percent }}%</td></tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot>
+                            <tr><td>Total</td><td class="numeric">{{ summary.feedback_total }}</td><td class="numeric">100%</td></tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="report-footer">
+                <span>This report was generated automatically by the Land Dispute Management System and reflects data as of the timestamp above.</span>
+                <span>See the full feedback register at <a href="{% url 'feedback_list' %}">Feedback</a>.</span>
             </div>
             {% else %}
             <div class="chart-card empty-state">

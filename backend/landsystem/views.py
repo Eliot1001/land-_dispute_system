@@ -165,30 +165,74 @@ def build_case_summary():
     level_labels = dict(Case.LEVEL_CHOICES)
     region_labels = dict(Case.REGION_CHOICES)
 
-    def counts_by(field, labels):
-        rows = Case.objects.values(field).annotate(count=Count('id')).order_by(field)
-        return [{'label': labels.get(row[field], row[field]), 'count': row['count']} for row in rows]
+    def counts_by(field, labels, total):
+        rows = Case.objects.values(field).annotate(count=Count('id')).order_by('-count')
+        return [
+            {
+                'label': labels.get(row[field], row[field]),
+                'count': row['count'],
+                'percent': round((row['count'] / total) * 100, 1) if total else 0,
+            }
+            for row in rows
+        ]
 
     total = Case.objects.count()
     resolved = Case.objects.filter(status='resolved').count()
+    pending = Case.objects.filter(status='pending').count()
+    in_progress = Case.objects.filter(status='in_progress').count()
+    escalated = Case.objects.filter(status='escalated').count()
+    unresolved = total - resolved
+
+    # Average number of days a resolved case took from filing to its last
+    # update (there's no dedicated "resolved_at" timestamp, so updated_at on
+    # a resolved case is the closest proxy).
+    resolved_durations = [
+        (case.updated_at - case.created_at).total_seconds()
+        for case in Case.objects.filter(status='resolved').only('created_at', 'updated_at')
+    ]
+    avg_resolution_days = round((sum(resolved_durations) / len(resolved_durations)) / 86400, 1) if resolved_durations else None
 
     rating_labels = dict(CaseFeedback.RATING_CHOICES)
     feedback_rows = CaseFeedback.objects.values('rating').annotate(count=Count('id')).order_by('rating')
     feedback_counts = {row['rating']: row['count'] for row in feedback_rows}
+    feedback_total = sum(feedback_counts.values())
     by_feedback = [
-        {'label': rating_labels[key], 'count': feedback_counts.get(key, 0)}
+        {
+            'label': rating_labels[key],
+            'count': feedback_counts.get(key, 0),
+            'percent': round((feedback_counts.get(key, 0) / feedback_total) * 100, 1) if feedback_total else 0,
+        }
         for key in rating_labels
     ]
+
+    officer_performance = [
+        {
+            'name': officer.user.get_full_name() or officer.user.username,
+            'level': officer.get_level_display(),
+            'region': officer.get_region_display(),
+            'assigned': officer.user.assigned_cases.count(),
+            'resolved': officer.user.assigned_cases.filter(status='resolved').count(),
+        }
+        for officer in OfficerProfile.objects.select_related('user')
+    ]
+    officer_performance = [row for row in officer_performance if row['assigned'] > 0]
+    officer_performance.sort(key=lambda row: row['resolved'], reverse=True)
 
     return {
         'total': total,
         'resolved': resolved,
+        'pending': pending,
+        'in_progress': in_progress,
+        'escalated': escalated,
+        'unresolved': unresolved,
         'resolution_rate': round((resolved / total) * 100, 1) if total else 0,
-        'by_status': counts_by('status', status_labels),
-        'by_level': counts_by('current_level', level_labels),
-        'by_region': counts_by('region', region_labels),
+        'avg_resolution_days': avg_resolution_days,
+        'by_status': counts_by('status', status_labels, total),
+        'by_level': counts_by('current_level', level_labels, total),
+        'by_region': counts_by('region', region_labels, total),
         'by_feedback': by_feedback,
-        'feedback_total': sum(feedback_counts.values()),
+        'feedback_total': feedback_total,
+        'officer_performance': officer_performance,
     }
 
 
@@ -408,6 +452,8 @@ def case_reports(request):
             'labels': [row['label'] for row in summary['by_feedback']],
             'counts': [row['count'] for row in summary['by_feedback']],
         }),
+        'generated_at': timezone.now(),
+        'generated_by': request.user.get_full_name() or request.user.username,
     }
     return render(request, 'reports.html', context)
 
