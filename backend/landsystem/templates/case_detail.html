@@ -459,15 +459,9 @@
                 <div class="description-section">
                     <h3><i class="fas fa-comment-dots"></i> Citizen Feedback</h3>
                     <div class="case-field">
-                        <strong>Rating</strong>
+                        <strong>Comment</strong>
                         <div class="case-field-value">{{ case.feedback.get_rating_display }}</div>
                     </div>
-                    {% if case.feedback.comment %}
-                    <div class="case-field">
-                        <strong>Comment</strong>
-                        <div class="description-text">{{ case.feedback.comment }}</div>
-                    </div>
-                    {% endif %}
                 </div>
                 {% endif %}
 

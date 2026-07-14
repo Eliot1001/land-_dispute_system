@@ -160,12 +160,6 @@
             text-decoration: underline;
         }
 
-        .comment-text {
-            color: #7f8c8d;
-            font-size: 13px;
-            max-width: 280px;
-        }
-
         .empty-state {
             text-align: center;
             padding: 60px 20px;
@@ -200,10 +194,9 @@
                     <thead>
                         <tr>
                             <th>Case</th>
-                            <th>Rating</th>
+                            <th>Comment</th>
                             <th>Officer</th>
                             <th>Region</th>
-                            <th>Comment</th>
                             <th>Submitted</th>
                         </tr>
                     </thead>
@@ -224,7 +217,6 @@
                                 {% endif %}
                             </td>
                             <td>{{ feedback.case.get_region_display }}</td>
-                            <td class="comment-text">{{ feedback.comment|default:"-" }}</td>
                             <td>{{ feedback.created_at|date:"F d, Y" }}</td>
                         </tr>
                         {% endfor %}
