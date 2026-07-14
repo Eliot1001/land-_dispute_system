@@ -5,11 +5,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#667eea">
-    <meta name="description" content="List of registered officers">
+    <meta name="description" content="Citizen feedback on handled cases">
     <link rel="manifest" href="{% static 'manifest.json' %}">
     <link rel="icon" type="image/png" href="{% static 'images/logo-192x192.png' %}">
     <link rel="apple-touch-icon" href="{% static 'images/logo-192x192.png' %}">
-    <title>Registered Officers - Land Dispute Management System</title>
+    <title>Feedback - Land Dispute Management System</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         * {
@@ -85,11 +85,6 @@
             border-radius: 10px;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
             margin-bottom: 30px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 20px;
-            flex-wrap: wrap;
         }
 
         .header h1 {
@@ -103,56 +98,19 @@
             font-size: 14px;
         }
 
-        .btn {
-            padding: 12px 24px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 600;
-            transition: all 0.3s;
-            text-decoration: none;
-            display: inline-block;
-            white-space: nowrap;
-        }
-
-        .btn-primary {
-            background: #3498db;
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background: #2980b9;
-        }
-
-        .alert {
-            padding: 15px;
-            border-radius: 5px;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .alert-success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-
-        .officers-container {
+        .feedback-container {
             background: white;
             border-radius: 10px;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
             padding: 10px 30px;
         }
 
-        .officers-table {
+        .feedback-table {
             width: 100%;
             border-collapse: collapse;
         }
 
-        .officers-table th {
+        .feedback-table th {
             text-align: left;
             padding: 14px 12px;
             font-size: 13px;
@@ -161,43 +119,57 @@
             border-bottom: 2px solid #ecf0f1;
         }
 
-        .officers-table td {
+        .feedback-table td {
             padding: 14px 12px;
             font-size: 14px;
             color: #2c3e50;
             border-bottom: 1px solid #ecf0f1;
+            vertical-align: top;
         }
 
-        .level-badge {
+        .rating-badge {
             display: inline-block;
             padding: 4px 12px;
             border-radius: 20px;
             font-size: 12px;
             font-weight: 600;
-            background: #e8f0fe;
-            color: #3498db;
         }
 
-        .level-badge.level-high_court {
+        .rating-badge.rating-solved {
+            background: #d4edda;
+            color: #27ae60;
+        }
+
+        .rating-badge.rating-not_solved {
+            background: #fdecea;
+            color: #e74c3c;
+        }
+
+        .rating-badge.rating-not_listened {
             background: #fdebd0;
             color: #b9770e;
+        }
+
+        .case-link {
+            color: #3498db;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .case-link:hover {
+            text-decoration: underline;
+        }
+
+        .comment-text {
+            color: #7f8c8d;
+            font-size: 13px;
+            max-width: 280px;
         }
 
         .empty-state {
             text-align: center;
             padding: 60px 20px;
             color: #7f8c8d;
-        }
-
-        .btn-delete {
-            background: #e74c3c;
-            color: white;
-            padding: 8px 14px;
-            font-size: 13px;
-        }
-
-        .btn-delete:hover {
-            background: #c0392b;
         }
     </style>
 </head>
@@ -218,67 +190,50 @@
         <!-- Main Content -->
         <div class="main-content">
             <div class="header">
-                <div>
-                    <h1><i class="fas fa-users"></i> Registered Officers</h1>
-                    <p>Everyone registered across the Village to High Court hierarchy</p>
-                </div>
-                <a href="{% url 'register_officer' %}" class="btn btn-primary">
-                    <i class="fas fa-plus"></i> New Officer
-                </a>
+                <h1><i class="fas fa-comment-dots"></i> Citizen Feedback</h1>
+                <p>How citizens rated the handling of their cases</p>
             </div>
 
-            {% if messages %}
-            {% for message in messages %}
-            <div class="alert alert-success">
-                <i class="fas fa-check-circle"></i>
-                <span>{{ message }}</span>
-            </div>
-            {% endfor %}
-            {% endif %}
-
-            <div class="officers-container">
-                {% if officers %}
-                <table class="officers-table">
+            <div class="feedback-container">
+                {% if feedback_entries %}
+                <table class="feedback-table">
                     <thead>
                         <tr>
-                            <th>Name</th>
-                            <th>Username</th>
-                            <th>Level</th>
-                            <th>Jurisdiction</th>
+                            <th>Case</th>
+                            <th>Rating</th>
+                            <th>Officer</th>
                             <th>Region</th>
-                            <th>Phone</th>
-                            <th></th>
+                            <th>Comment</th>
+                            <th>Submitted</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {% for officer in officers %}
+                        {% for feedback in feedback_entries %}
                         <tr>
-                            <td>{{ officer.user.get_full_name|default:officer.user.username }}</td>
-                            <td>{{ officer.user.username }}</td>
-                            <td><span class="level-badge level-{{ officer.level }}">{{ officer.get_level_display }}</span></td>
                             <td>
-                                {{ officer.jurisdiction|default:"-" }}{% if officer.district %} ({{ officer.district }} District){% endif %}
-                                {% if officer.level in levels_requiring_jurisdiction %}
-                                <a href="{% url 'edit_officer_jurisdiction' officer.id %}" title="Edit jurisdiction"><i class="fas fa-pen" style="color: #3498db; margin-left: 6px;"></i></a>
-                                {% endif %}
-                            </td>
-                            <td>{{ officer.get_region_display }}</td>
-                            <td>{{ officer.phone|default:"-" }}</td>
-                            <td>
-                                {% if officer.user != request.user %}
-                                <a href="{% url 'delete_officer' officer.id %}" class="btn btn-delete">
-                                    <i class="fas fa-trash"></i> Delete
+                                <a class="case-link" href="{% url 'case_detail' feedback.case.id %}">
+                                    #{{ feedback.case.id }} - {{ feedback.case.title }}
                                 </a>
+                            </td>
+                            <td><span class="rating-badge rating-{{ feedback.rating }}">{{ feedback.get_rating_display }}</span></td>
+                            <td>
+                                {% if feedback.case.assigned_to %}
+                                    {{ feedback.case.assigned_to.get_full_name|default:feedback.case.assigned_to.username }}
+                                {% else %}
+                                    <span style="color: #e74c3c;">Unassigned</span>
                                 {% endif %}
                             </td>
+                            <td>{{ feedback.case.get_region_display }}</td>
+                            <td class="comment-text">{{ feedback.comment|default:"-" }}</td>
+                            <td>{{ feedback.created_at|date:"F d, Y" }}</td>
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
                 {% else %}
                 <div class="empty-state">
-                    <i class="fas fa-user-slash" style="font-size: 32px; margin-bottom: 10px; display: block;"></i>
-                    No officers registered yet.
+                    <i class="fas fa-comment-slash" style="font-size: 32px; margin-bottom: 10px; display: block;"></i>
+                    No feedback submitted yet.
                 </div>
                 {% endif %}
             </div>

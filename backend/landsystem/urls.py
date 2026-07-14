@@ -17,7 +17,8 @@ urlpatterns = [
     path('officers/<int:officer_id>/edit-jurisdiction/', views.edit_officer_jurisdiction, name='edit_officer_jurisdiction'),
     path('officers/<int:officer_id>/delete/', views.delete_officer, name='delete_officer'),
     path('reports/', views.case_reports, name='case_reports'),
-    
+    path('feedback/', views.feedback_list, name='feedback_list'),
+
     # Citizen routes
     path('citizen/register/', views.citizen_register, name='citizen_register'),
     path('citizen/login/', views.citizen_login, name='citizen_login'),

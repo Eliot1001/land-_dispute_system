@@ -333,6 +333,7 @@
             {% if request.user.is_superuser or request.user.officer_profile.level == 'high_court' %}
             <a href="{% url 'case_reports' %}"><i class="fas fa-chart-pie"></i> Reports</a>
             <a href="{% url 'officer_list' %}"><i class="fas fa-users"></i> Officers</a>
+            <a href="{% url 'feedback_list' %}"><i class="fas fa-comment-dots"></i> Feedback</a>
             {% endif %}
             <a href="{% url 'settings' %}"><i class="fas fa-cog"></i> Settings</a>
             <a href="{% url 'logout' %}" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>

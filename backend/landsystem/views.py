@@ -7,7 +7,7 @@ from django.views.decorators.http import require_http_methods
 from django.http import JsonResponse, FileResponse, HttpResponseForbidden
 from django.db.models import Q, Count
 from django.utils import timezone
-from .models import Case, Citizen, OfficerProfile, CaseDocument, DISTRICTS_BY_REGION
+from .models import Case, Citizen, OfficerProfile, CaseDocument, CaseFeedback, DISTRICTS_BY_REGION
 import json
 import math
 
@@ -171,6 +171,15 @@ def build_case_summary():
 
     total = Case.objects.count()
     resolved = Case.objects.filter(status='resolved').count()
+
+    rating_labels = dict(CaseFeedback.RATING_CHOICES)
+    feedback_rows = CaseFeedback.objects.values('rating').annotate(count=Count('id')).order_by('rating')
+    feedback_counts = {row['rating']: row['count'] for row in feedback_rows}
+    by_feedback = [
+        {'label': rating_labels[key], 'count': feedback_counts.get(key, 0)}
+        for key in rating_labels
+    ]
+
     return {
         'total': total,
         'resolved': resolved,
@@ -178,6 +187,8 @@ def build_case_summary():
         'by_status': counts_by('status', status_labels),
         'by_level': counts_by('current_level', level_labels),
         'by_region': counts_by('region', region_labels),
+        'by_feedback': by_feedback,
+        'feedback_total': sum(feedback_counts.values()),
     }
 
 
@@ -393,6 +404,10 @@ def case_reports(request):
             'labels': [row['label'] for row in summary['by_region']],
             'counts': [row['count'] for row in summary['by_region']],
         }),
+        'feedback_chart_data': json.dumps({
+            'labels': [row['label'] for row in summary['by_feedback']],
+            'counts': [row['count'] for row in summary['by_feedback']],
+        }),
     }
     return render(request, 'reports.html', context)
 
@@ -408,6 +423,21 @@ def officer_list(request):
         'officers': get_registered_officers(),
         'levels_requiring_jurisdiction': LEVELS_REQUIRING_JURISDICTION,
     })
+
+
+@login_required(login_url='login')
+def feedback_list(request):
+    """Admin-only: every citizen review of how their case was handled, with
+    the case, assigned officer, and region it belongs to."""
+    if not is_admin_user(request.user):
+        return HttpResponseForbidden("Only administrators can view feedback.")
+
+    feedback_entries = (
+        CaseFeedback.objects
+        .select_related('case', 'case__assigned_to')
+        .order_by('-created_at')
+    )
+    return render(request, 'feedback.html', {'feedback_entries': feedback_entries})
 
 
 @login_required(login_url='login')
