@@ -14,12 +14,12 @@ import math
 
 # Escalation hierarchy, lowest to highest. Matches OfficerProfile.LEVEL_CHOICES
 # and Case.LEVEL_CHOICES.
-LEVEL_ORDER = ['village', 'ward', 'district_land_officer', 'regional', 'high_court']
+LEVEL_ORDER = ['village', 'street', 'ward', 'district_land_officer', 'regional', 'high_court']
 
 # These levels serve a specific place within their region, so registering one
-# requires naming it (e.g. "Chamwino" village, "Makole" ward). Regional/High
-# Court officers cover the whole region, so no specific place applies.
-LEVELS_REQUIRING_JURISDICTION = ['village', 'ward', 'district_land_officer']
+# requires naming it (e.g. "Chamwino" village, "Kariakoo" street, "Makole" ward).
+# Regional/High Court officers cover the whole region, so no specific place applies.
+LEVELS_REQUIRING_JURISDICTION = ['village', 'street', 'ward', 'district_land_officer']
 
 
 # Region coordinates for mapping

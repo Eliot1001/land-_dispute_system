@@ -35,6 +35,7 @@ class OfficerProfile(models.Model):
     # escalation moves it one step down this list at a time.
     LEVEL_CHOICES = [
         ('village', 'Village Officer'),
+        ('street', 'Street Officer'),
         ('ward', 'Ward Officer'),
         ('district_land_officer', 'District Land Officer'),
         ('regional', 'Regional Officer'),
