@@ -176,6 +176,7 @@ class ApiService {
   static Future<CaseDetail> submitCase({
     required String description,
     required String location,
+    required String ward,
     required double latitude,
     required double longitude,
     List<PlatformFile> documents = const [],
@@ -185,6 +186,7 @@ class ApiService {
     request.headers.addAll(_headers());
     request.fields['description'] = description;
     request.fields['location'] = location;
+    request.fields['ward'] = ward;
     request.fields['latitude'] = latitude.toString();
     request.fields['longitude'] = longitude.toString();
 
@@ -199,6 +201,20 @@ class ApiService {
     final streamedResponse = await request.send();
     final response = await http.Response.fromStream(streamedResponse);
     return CaseDetail.fromJson(_decode(response));
+  }
+
+  static Future<CaseFeedback> submitCaseFeedback({
+    required int caseId,
+    required String rating,
+    String comment = '',
+  }) async {
+    await _loadToken();
+    final response = await http.post(
+      Uri.parse('$baseUrl/cases/$caseId/feedback/'),
+      headers: _headers(),
+      body: {'rating': rating, 'comment': comment},
+    );
+    return CaseFeedback.fromJson(_decode(response));
   }
 
   static Future<List<int>> downloadDocument(int documentId) async {

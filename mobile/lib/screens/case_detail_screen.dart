@@ -23,10 +23,20 @@ class _CaseDetailScreenState extends State<CaseDetailScreen> {
   String? _error;
   int? _downloadingDocId;
 
+  String? _selectedRating;
+  final _commentController = TextEditingController();
+  bool _submittingFeedback = false;
+
   @override
   void initState() {
     super.initState();
     _load();
+  }
+
+  @override
+  void dispose() {
+    _commentController.dispose();
+    super.dispose();
   }
 
   Future<void> _load() async {
@@ -36,11 +46,37 @@ class _CaseDetailScreenState extends State<CaseDetailScreen> {
     });
     try {
       final detail = await ApiService.getCaseDetail(widget.caseId);
-      setState(() => _caseDetail = detail);
+      setState(() {
+        _caseDetail = detail;
+        _selectedRating = detail.feedback?.rating;
+        _commentController.text = detail.feedback?.comment ?? '';
+      });
     } catch (e) {
       setState(() => _error = e.toString());
     } finally {
       if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _submitFeedback() async {
+    if (_selectedRating == null) return;
+    setState(() => _submittingFeedback = true);
+    try {
+      final feedback = await ApiService.submitCaseFeedback(
+        caseId: widget.caseId,
+        rating: _selectedRating!,
+        comment: _commentController.text.trim(),
+      );
+      if (!mounted) return;
+      setState(() => _selectedRating = feedback.rating);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Thank you for your feedback')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Could not submit feedback: $e')));
+    } finally {
+      if (mounted) setState(() => _submittingFeedback = false);
     }
   }
 
@@ -102,6 +138,7 @@ class _CaseDetailScreenState extends State<CaseDetailScreen> {
         if (_statusBanner(c.status) != null) ...[_statusBanner(c.status)!, const SizedBox(height: 12)],
         _infoRow(Icons.description, 'Description', c.description),
         _infoRow(Icons.location_on, 'Location', c.location),
+        if (c.ward.isNotEmpty) _infoRow(Icons.home, 'Ward/Village', c.ward),
         _infoRow(Icons.map, 'Region', c.regionDisplay),
         _infoRow(Icons.my_location, 'Coordinates', '${c.latitude.toStringAsFixed(6)}, ${c.longitude.toStringAsFixed(6)}'),
         _infoRow(Icons.person, 'Assigned Officer', c.assignedOfficer ?? 'Pending assignment'),
@@ -145,6 +182,8 @@ class _CaseDetailScreenState extends State<CaseDetailScreen> {
           const SizedBox(height: 20),
           _progressSection(c),
         ],
+        const SizedBox(height: 20),
+        _feedbackSection(),
         const SizedBox(height: 20),
         Text('Evidence Documents (${c.documents.length})', style: const TextStyle(fontWeight: FontWeight.bold)),
         const SizedBox(height: 8),
@@ -261,6 +300,64 @@ class _CaseDetailScreenState extends State<CaseDetailScreen> {
             if (c.status != 'pending')
               _timelineEvent(Icons.flag, 'Status: ${c.statusDisplay}', DateFormat.yMMMd().add_jm().format(c.updatedAt)),
             if (c.notes.isNotEmpty) _timelineEvent(Icons.notes, 'Officer Notes', c.notes, isLast: true),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _feedbackSection() {
+    const options = [
+      ('solved', 'Solved'),
+      ('not_solved', 'Not Solved'),
+      ('not_listened', 'Not Listened To'),
+    ];
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Your Feedback', style: TextStyle(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 4),
+            Text(
+              'Let us know how your case was handled.',
+              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+            ),
+            for (final (value, label) in options)
+              RadioListTile<String>(
+                contentPadding: EdgeInsets.zero,
+                dense: true,
+                title: Text(label),
+                value: value,
+                groupValue: _selectedRating,
+                activeColor: AppColors.primary,
+                onChanged: (v) => setState(() => _selectedRating = v),
+              ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _commentController,
+              maxLines: 3,
+              decoration: const InputDecoration(
+                labelText: 'Comments (optional)',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _selectedRating == null || _submittingFeedback ? null : _submitFeedback,
+                child: _submittingFeedback
+                    ? const SizedBox(
+                        height: 18,
+                        width: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      )
+                    : const Text('Submit Feedback'),
+              ),
+            ),
           ],
         ),
       ),

@@ -22,7 +22,7 @@ class CaseDocument {
       documentType: json['document_type'] ?? '',
       fileExtension: json['file_extension'] ?? '',
       fileSizeMb: (json['file_size_mb'] as num?)?.toDouble() ?? 0,
-      uploadedAt: DateTime.parse(json['uploaded_at']),
+      uploadedAt: DateTime.parse(json['uploaded_at']).toLocal(),
     );
   }
 }
@@ -35,6 +35,7 @@ class CaseSummary {
   final String region;
   final String regionDisplay;
   final String location;
+  final String ward;
   final DateTime createdAt;
   final DateTime updatedAt;
   // Escalation never changes `status` (it stays pending/in_progress/resolved)
@@ -51,6 +52,7 @@ class CaseSummary {
     required this.region,
     required this.regionDisplay,
     required this.location,
+    required this.ward,
     required this.createdAt,
     required this.updatedAt,
     required this.isEscalated,
@@ -66,10 +68,34 @@ class CaseSummary {
       region: json['region'] ?? '',
       regionDisplay: json['region_display'] ?? '',
       location: json['location'] ?? '',
-      createdAt: DateTime.parse(json['created_at']),
-      updatedAt: DateTime.parse(json['updated_at']),
+      ward: json['ward'] ?? '',
+      createdAt: DateTime.parse(json['created_at']).toLocal(),
+      updatedAt: DateTime.parse(json['updated_at']).toLocal(),
       isEscalated: json['is_escalated'] ?? false,
       currentLevelDisplay: json['current_level_display'] ?? '',
+    );
+  }
+}
+
+class CaseFeedback {
+  final String rating;
+  final String ratingDisplay;
+  final String comment;
+  final DateTime updatedAt;
+
+  CaseFeedback({
+    required this.rating,
+    required this.ratingDisplay,
+    required this.comment,
+    required this.updatedAt,
+  });
+
+  factory CaseFeedback.fromJson(Map<String, dynamic> json) {
+    return CaseFeedback(
+      rating: json['rating'] ?? '',
+      ratingDisplay: json['rating_display'] ?? '',
+      comment: json['comment'] ?? '',
+      updatedAt: DateTime.parse(json['updated_at']).toLocal(),
     );
   }
 }
@@ -81,6 +107,7 @@ class CaseDetail extends CaseSummary {
   final String notes;
   final String? assignedOfficer;
   final List<CaseDocument> documents;
+  final CaseFeedback? feedback;
 
   CaseDetail({
     required super.id,
@@ -90,6 +117,7 @@ class CaseDetail extends CaseSummary {
     required super.region,
     required super.regionDisplay,
     required super.location,
+    required super.ward,
     required super.createdAt,
     required super.updatedAt,
     required super.isEscalated,
@@ -100,6 +128,7 @@ class CaseDetail extends CaseSummary {
     required this.notes,
     required this.assignedOfficer,
     required this.documents,
+    required this.feedback,
   });
 
   factory CaseDetail.fromJson(Map<String, dynamic> json) {
@@ -111,8 +140,9 @@ class CaseDetail extends CaseSummary {
       region: json['region'] ?? '',
       regionDisplay: json['region_display'] ?? '',
       location: json['location'] ?? '',
-      createdAt: DateTime.parse(json['created_at']),
-      updatedAt: DateTime.parse(json['updated_at']),
+      ward: json['ward'] ?? '',
+      createdAt: DateTime.parse(json['created_at']).toLocal(),
+      updatedAt: DateTime.parse(json['updated_at']).toLocal(),
       isEscalated: json['is_escalated'] ?? false,
       currentLevelDisplay: json['current_level_display'] ?? '',
       description: json['description'] ?? '',
@@ -123,6 +153,7 @@ class CaseDetail extends CaseSummary {
       documents: (json['documents'] as List<dynamic>? ?? [])
           .map((d) => CaseDocument.fromJson(d))
           .toList(),
+      feedback: json['feedback'] != null ? CaseFeedback.fromJson(json['feedback']) : null,
     );
   }
 }

@@ -52,9 +52,28 @@ def get_region_from_coordinates(lat, lng):
 
 
 def assign_case_to_officer(case):
-    """Assign a case to an officer at its current level, in its region."""
+    """Assign a case to an officer at its current level, in its region.
+
+    For levels tied to a specific place (village/ward/district), prefer an
+    officer whose jurisdiction matches the case's ward - so a case starts
+    with the officer covering the citizen's own village/ward rather than
+    any officer in the region. Jurisdiction is free text on both sides, so
+    the match is a loose substring check rather than an exact one. If no
+    matching officer is registered yet, the case is left unassigned - it
+    still shows up in that region/level's queue (see dashboard) for any
+    officer there to pick up.
+    """
     try:
-        officer = OfficerProfile.objects.filter(region=case.region, level=case.current_level).first()
+        officers = list(OfficerProfile.objects.filter(region=case.region, level=case.current_level))
+        if case.current_level in LEVELS_REQUIRING_JURISDICTION and case.ward:
+            ward = case.ward.strip().lower()
+            matched = [
+                o for o in officers
+                if o.jurisdiction and (ward in o.jurisdiction.lower() or o.jurisdiction.lower() in ward)
+            ]
+            if matched:
+                officers = matched
+        officer = officers[0] if officers else None
         if officer:
             case.assigned_to = officer.user
             case.save()

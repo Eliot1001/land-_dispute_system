@@ -20,6 +20,7 @@ class _SubmitCaseScreenState extends State<SubmitCaseScreen> {
   static const _tanzaniaCenter = ll.LatLng(-6.3690, 34.8888);
 
   final _descriptionController = TextEditingController();
+  final _wardController = TextEditingController();
   final _mapController = MapController();
 
   ll.LatLng? _pinned;
@@ -74,6 +75,10 @@ class _SubmitCaseScreenState extends State<SubmitCaseScreen> {
       setState(() => _error = 'Please fill in the description');
       return;
     }
+    if (_wardController.text.trim().isEmpty) {
+      setState(() => _error = 'Please enter your ward or village');
+      return;
+    }
     if (_pinned == null) {
       setState(() => _error = 'Please pin your location on the map, or tap "Get My Location"');
       return;
@@ -89,6 +94,7 @@ class _SubmitCaseScreenState extends State<SubmitCaseScreen> {
         location: _detectedLocation.isNotEmpty
             ? _detectedLocation
             : 'Coordinates: ${_pinned!.latitude.toStringAsFixed(6)}, ${_pinned!.longitude.toStringAsFixed(6)}',
+        ward: _wardController.text.trim(),
         latitude: _pinned!.latitude,
         longitude: _pinned!.longitude,
         documents: _documents,
@@ -107,6 +113,7 @@ class _SubmitCaseScreenState extends State<SubmitCaseScreen> {
   @override
   void dispose() {
     _descriptionController.dispose();
+    _wardController.dispose();
     super.dispose();
   }
 
@@ -131,6 +138,14 @@ class _SubmitCaseScreenState extends State<SubmitCaseScreen> {
             decoration: const InputDecoration(
               labelText: 'Description',
               hintText: 'Describe the dispute in detail',
+            ),
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _wardController,
+            decoration: const InputDecoration(
+              labelText: 'Ward / Village',
+              hintText: 'Where are you coming from?',
             ),
           ),
           const SizedBox(height: 16),

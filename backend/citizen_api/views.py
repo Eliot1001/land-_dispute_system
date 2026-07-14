@@ -9,7 +9,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
-from landsystem.models import Case, CaseDocument, Citizen
+from landsystem.models import Case, CaseDocument, CaseFeedback, Citizen
 from landsystem.views import assign_case_to_officer, get_region_from_coordinates
 
 
@@ -43,6 +43,7 @@ def serialize_case(case, detail=False):
         'region': case.region,
         'region_display': case.get_region_display(),
         'location': case.location,
+        'ward': case.ward,
         'created_at': case.created_at,
         'updated_at': case.updated_at,
         'is_escalated': case.current_level != 'village',
@@ -67,8 +68,18 @@ def serialize_case(case, detail=False):
                 }
                 for doc in case.documents.all()
             ],
+            'feedback': serialize_feedback(case.feedback) if hasattr(case, 'feedback') else None,
         })
     return data
+
+
+def serialize_feedback(feedback):
+    return {
+        'rating': feedback.rating,
+        'rating_display': feedback.get_rating_display(),
+        'comment': feedback.comment,
+        'updated_at': feedback.updated_at,
+    }
 
 
 def get_citizen_or_403(request):
@@ -208,12 +219,13 @@ def cases(request):
     if request.method == 'POST':
         description = request.data.get('description', '').strip()
         location = request.data.get('location', '').strip()
+        ward = request.data.get('ward', '').strip()
         latitude = request.data.get('latitude', '')
         longitude = request.data.get('longitude', '')
 
-        if not all([description, location, latitude, longitude]):
+        if not all([description, location, ward, latitude, longitude]):
             return Response(
-                {'error': 'Please provide description and location with coordinates'},
+                {'error': 'Please provide description, ward/village, and location with coordinates'},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -229,6 +241,7 @@ def cases(request):
             title='',
             description=description,
             location=location,
+            ward=ward,
             latitude=lat,
             longitude=lng,
             region=get_region_from_coordinates(lat, lng),
@@ -284,6 +297,29 @@ def case_detail(request, case_id):
 
     case = get_object_or_404(Case, id=case_id, citizen=citizen)
     return Response(serialize_case(case, detail=True))
+
+
+@api_view(['POST'])
+def case_feedback(request, case_id):
+    citizen, error = get_citizen_or_403(request)
+    if error:
+        return error
+
+    case = get_object_or_404(Case, id=case_id, citizen=citizen)
+
+    rating = request.data.get('rating')
+    valid_ratings = dict(CaseFeedback.RATING_CHOICES)
+    if rating not in valid_ratings:
+        return Response({'error': 'Please select a valid feedback option'}, status=status.HTTP_400_BAD_REQUEST)
+
+    comment = request.data.get('comment', '').strip()
+
+    # One review per case - resubmitting updates it rather than duplicating.
+    feedback, _ = CaseFeedback.objects.update_or_create(
+        case=case,
+        defaults={'rating': rating, 'comment': comment},
+    )
+    return Response(serialize_feedback(feedback))
 
 
 @api_view(['GET'])

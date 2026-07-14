@@ -90,6 +90,9 @@ class Case(models.Model):
     citizen_email = models.EmailField(blank=True)
     description = models.TextField()
     location = models.CharField(max_length=255)
+    # The citizen's own village/ward, as they name it - not validated against
+    # OfficerProfile.jurisdiction, which is free text set independently by officers.
+    ward = models.CharField(max_length=255, blank=True, default='')
     region = models.CharField(max_length=50, choices=REGION_CHOICES, default='dodoma')
     latitude = models.FloatField()
     longitude = models.FloatField()
@@ -107,9 +110,31 @@ class Case(models.Model):
     class Meta:
         db_table = 'cases'
         ordering = ['-created_at']
-    
+
     def __str__(self):
         return f"{self.title} - {self.status}"
+
+
+class CaseFeedback(models.Model):
+    """A citizen's review of how their case was handled. One per case -
+    resubmitting updates the existing review rather than creating a new one."""
+    RATING_CHOICES = [
+        ('solved', 'Solved'),
+        ('not_solved', 'Not Solved'),
+        ('not_listened', 'Not Listened To'),
+    ]
+
+    case = models.OneToOneField(Case, on_delete=models.CASCADE, related_name='feedback')
+    rating = models.CharField(max_length=20, choices=RATING_CHOICES)
+    comment = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'case_feedback'
+
+    def __str__(self):
+        return f"{self.get_rating_display()} - Case #{self.case_id}"
 
 
 class CaseDocument(models.Model):

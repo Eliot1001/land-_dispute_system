@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Case, Citizen, OfficerProfile, CaseDocument
+from .models import Case, Citizen, OfficerProfile, CaseDocument, CaseFeedback
 
 @admin.register(Citizen)
 class CitizenAdmin(admin.ModelAdmin):
@@ -16,12 +16,19 @@ class OfficerProfileAdmin(admin.ModelAdmin):
     readonly_fields = ['created_at']
 
 
+class CaseFeedbackInline(admin.StackedInline):
+    model = CaseFeedback
+    extra = 0
+    readonly_fields = ['created_at', 'updated_at']
+
+
 @admin.register(Case)
 class CaseAdmin(admin.ModelAdmin):
     list_display = ['title', 'citizen_name', 'region', 'current_level', 'status', 'assigned_to', 'created_at']
     list_filter = ['status', 'current_level', 'region', 'created_at']
     search_fields = ['title', 'citizen_name', 'location', 'description']
     readonly_fields = ['created_at', 'updated_at']
+    inlines = [CaseFeedbackInline]
     fieldsets = (
         ('Case Information', {
             'fields': ('title', 'description', 'status', 'current_level', 'level_updated_at', 'citizen')
@@ -30,7 +37,7 @@ class CaseAdmin(admin.ModelAdmin):
             'fields': ('citizen_name', 'citizen_phone', 'citizen_email')
         }),
         ('Location', {
-            'fields': ('location', 'region', 'latitude', 'longitude')
+            'fields': ('location', 'ward', 'region', 'latitude', 'longitude')
         }),
         ('Assignment', {
             'fields': ('assigned_to', 'notes')
@@ -47,4 +54,12 @@ class CaseDocumentAdmin(admin.ModelAdmin):
     list_filter = ['document_type', 'uploaded_at']
     search_fields = ['title', 'case__title', 'case__citizen_name']
     readonly_fields = ['uploaded_at', 'file_extension']
+
+
+@admin.register(CaseFeedback)
+class CaseFeedbackAdmin(admin.ModelAdmin):
+    list_display = ['case', 'rating', 'created_at', 'updated_at']
+    list_filter = ['rating', 'created_at']
+    search_fields = ['case__title', 'case__citizen_name', 'comment']
+    readonly_fields = ['created_at', 'updated_at']
 

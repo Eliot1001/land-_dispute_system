@@ -9,5 +9,6 @@ urlpatterns = [
     path('profile/', views.profile, name='api_profile'),
     path('cases/', views.cases, name='api_cases'),
     path('cases/<int:case_id>/', views.case_detail, name='api_case_detail'),
+    path('cases/<int:case_id>/feedback/', views.case_feedback, name='api_case_feedback'),
     path('documents/<int:document_id>/download/', views.download_document, name='api_download_document'),
 ]
