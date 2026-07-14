@@ -24,19 +24,12 @@ class _CaseDetailScreenState extends State<CaseDetailScreen> {
   int? _downloadingDocId;
 
   String? _selectedRating;
-  final _commentController = TextEditingController();
   bool _submittingFeedback = false;
 
   @override
   void initState() {
     super.initState();
     _load();
-  }
-
-  @override
-  void dispose() {
-    _commentController.dispose();
-    super.dispose();
   }
 
   Future<void> _load() async {
@@ -49,7 +42,6 @@ class _CaseDetailScreenState extends State<CaseDetailScreen> {
       setState(() {
         _caseDetail = detail;
         _selectedRating = detail.feedback?.rating;
-        _commentController.text = detail.feedback?.comment ?? '';
       });
     } catch (e) {
       setState(() => _error = e.toString());
@@ -65,7 +57,6 @@ class _CaseDetailScreenState extends State<CaseDetailScreen> {
       final feedback = await ApiService.submitCaseFeedback(
         caseId: widget.caseId,
         rating: _selectedRating!,
-        comment: _commentController.text.trim(),
       );
       if (!mounted) return;
       setState(() => _selectedRating = feedback.rating);
@@ -140,7 +131,6 @@ class _CaseDetailScreenState extends State<CaseDetailScreen> {
         _infoRow(Icons.location_on, 'Location', c.location),
         if (c.ward.isNotEmpty) _infoRow(Icons.home, 'Ward/Village', c.ward),
         _infoRow(Icons.map, 'Region', c.regionDisplay),
-        _infoRow(Icons.my_location, 'Coordinates', '${c.latitude.toStringAsFixed(6)}, ${c.longitude.toStringAsFixed(6)}'),
         _infoRow(Icons.person, 'Assigned Officer', c.assignedOfficer ?? 'Pending assignment'),
         _infoRow(Icons.calendar_today, 'Submitted', DateFormat.yMMMd().add_jm().format(c.createdAt)),
         _infoRow(Icons.update, 'Last Updated', DateFormat.yMMMd().add_jm().format(c.updatedAt)),
@@ -336,14 +326,6 @@ class _CaseDetailScreenState extends State<CaseDetailScreen> {
                 onChanged: (v) => setState(() => _selectedRating = v),
               ),
             const SizedBox(height: 8),
-            TextField(
-              controller: _commentController,
-              maxLines: 3,
-              decoration: const InputDecoration(
-                labelText: 'Comments (optional)',
-                border: OutlineInputBorder(),
-              ),
-            ),
             const SizedBox(height: 12),
             SizedBox(
               width: double.infinity,

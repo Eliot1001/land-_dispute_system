@@ -406,10 +406,6 @@
                             <div class="case-field-value">{{ case.location }}</div>
                         </div>
                         <div class="case-field">
-                            <strong>Coordinates</strong>
-                            <div class="case-field-value">{{ case.latitude }}, {{ case.longitude }}</div>
-                        </div>
-                        <div class="case-field">
                             <strong>Date Filed</strong>
                             <div class="case-field-value">{{ case.created_at|date:"F d, Y" }}</div>
                         </div>
@@ -456,7 +452,24 @@
                     <h3><i class="fas fa-align-left"></i> Case Description</h3>
                     <div class="description-text">{{ case.description }}</div>
                 </div>
-                
+
+                {% if case.feedback %}
+                <!-- Citizen Feedback -->
+                <div class="description-section">
+                    <h3><i class="fas fa-comment-dots"></i> Citizen Feedback</h3>
+                    <div class="case-field">
+                        <strong>Rating</strong>
+                        <div class="case-field-value">{{ case.feedback.get_rating_display }}</div>
+                    </div>
+                    {% if case.feedback.comment %}
+                    <div class="case-field">
+                        <strong>Comment</strong>
+                        <div class="description-text">{{ case.feedback.comment }}</div>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+
                 <!-- Quick Status Actions -->
                 <div style="background: linear-gradient(135deg, rgba(52, 152, 219, 0.1) 0%, rgba(231, 76, 60, 0.1) 100%); padding: 20px; border-radius: 8px; margin-bottom: 30px; border-left: 4px solid #3498db;">
                     <h3 style="margin-bottom: 15px; color: #2c3e50; font-size: 16px;">

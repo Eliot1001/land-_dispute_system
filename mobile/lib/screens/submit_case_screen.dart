@@ -98,7 +98,7 @@ class _SubmitCaseScreenState extends State<SubmitCaseScreen> {
       return;
     }
     if (_pinned == null) {
-      setState(() => _error = 'Please pin your location on the map, or tap "Get My Location"');
+      setState(() => _error = 'Please pin your location on the map');
       return;
     }
 
@@ -169,17 +169,9 @@ class _SubmitCaseScreenState extends State<SubmitCaseScreen> {
           const SizedBox(height: 16),
           const Text('Location', style: TextStyle(fontWeight: FontWeight.w600)),
           const SizedBox(height: 8),
-          OutlinedButton.icon(
-            onPressed: _locating ? null : _useCurrentLocation,
-            icon: _locating
-                ? const SizedBox(height: 16, width: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                : const Icon(Icons.my_location),
-            label: Text(_locating ? 'Pinpointing your location...' : 'Get My Current Location'),
-          ),
-          const SizedBox(height: 4),
-          const Text(
-            'Or tap on the map to pin the location manually',
-            style: TextStyle(fontSize: 12, color: Colors.grey),
+          Text(
+            _locating ? 'Pinpointing your location...' : 'Tap on the map to pin your location',
+            style: const TextStyle(fontSize: 12, color: Colors.grey),
           ),
           const SizedBox(height: 8),
           ClipRRect(
