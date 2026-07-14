@@ -256,7 +256,7 @@
                             <td>{{ officer.user.username }}</td>
                             <td><span class="level-badge level-{{ officer.level }}">{{ officer.get_level_display }}</span></td>
                             <td>
-                                {{ officer.jurisdiction|default:"-" }}
+                                {{ officer.jurisdiction|default:"-" }}{% if officer.district %} ({{ officer.district }} District){% endif %}
                                 {% if officer.level in levels_requiring_jurisdiction %}
                                 <a href="{% url 'edit_officer_jurisdiction' officer.id %}" title="Edit jurisdiction"><i class="fas fa-pen" style="color: #3498db; margin-left: 6px;"></i></a>
                                 {% endif %}

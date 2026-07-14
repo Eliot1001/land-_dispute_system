@@ -32,16 +32,34 @@ class _SubmitCaseScreenState extends State<SubmitCaseScreen> {
   bool _submitting = false;
   String? _error;
 
+  @override
+  void initState() {
+    super.initState();
+    // Detect the citizen's location as soon as the screen opens, so they
+    // don't have to press "Get My Location" themselves.
+    _useCurrentLocation();
+  }
+
   Future<void> _useCurrentLocation() async {
     setState(() {
       _locating = true;
       _error = null;
     });
     try {
+      // Show a cached fix immediately so the map isn't blank while a fresh,
+      // more accurate GPS lock is still being acquired in the background.
+      final cached = await LocationService.getLastKnownLocation();
+      if (cached != null && mounted) {
+        await _setPinned(ll.LatLng(cached.latitude, cached.longitude), accuracy: cached.accuracy);
+      }
+
       final position = await LocationService.getBestLocation();
+      if (!mounted) return;
       await _setPinned(ll.LatLng(position.latitude, position.longitude), accuracy: position.accuracy);
     } catch (e) {
-      setState(() => _error = e.toString());
+      // A cached fix already on screen is still usable, so don't blank it
+      // out with an error - the citizen can retry or pin manually either way.
+      if (_pinned == null) setState(() => _error = e.toString());
     } finally {
       if (mounted) setState(() => _locating = false);
     }

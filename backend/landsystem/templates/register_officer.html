@@ -317,6 +317,13 @@
                             </div>
                         </div>
 
+                        <div class="form-group" id="districtGroup">
+                            <label for="district">District</label>
+                            <select id="district" name="district">
+                                <option value="" disabled selected>Select region first</option>
+                            </select>
+                        </div>
+
                         <div class="form-group" id="jurisdictionGroup">
                             <label for="jurisdiction" id="jurisdictionLabel">Village Name</label>
                             <input type="text" id="jurisdiction" name="jurisdiction" placeholder="e.g., Chamwino">
@@ -356,6 +363,8 @@
         </div>
     </div>
 
+    {{ districts_by_region|json_script:"districts-by-region-data" }}
+    {{ levels_requiring_district|json_script:"levels-requiring-district-data" }}
     <script>
         // Village/Ward/District officers serve a specific place within their
         // region, so the jurisdiction field's label (and whether it's shown
@@ -368,10 +377,18 @@
             district_land_officer: 'District Name',
         };
 
+        // Village/Street/Ward officers additionally pick which district their
+        // area falls under, populated from the region they've chosen.
+        const districtsByRegion = JSON.parse(document.getElementById('districts-by-region-data').textContent);
+        const levelsRequiringDistrict = JSON.parse(document.getElementById('levels-requiring-district-data').textContent);
+
         const levelSelect = document.getElementById('level');
+        const regionSelect = document.getElementById('region');
         const jurisdictionGroup = document.getElementById('jurisdictionGroup');
         const jurisdictionLabel = document.getElementById('jurisdictionLabel');
         const jurisdictionInput = document.getElementById('jurisdiction');
+        const districtGroup = document.getElementById('districtGroup');
+        const districtSelect = document.getElementById('district');
 
         function updateJurisdictionField() {
             const label = jurisdictionLabels[levelSelect.value];
@@ -386,8 +403,44 @@
             }
         }
 
-        levelSelect.addEventListener('change', updateJurisdictionField);
+        function updateDistrictField() {
+            const needsDistrict = levelsRequiringDistrict.includes(levelSelect.value);
+            if (!needsDistrict) {
+                districtGroup.style.display = 'none';
+                districtSelect.required = false;
+                districtSelect.value = '';
+                return;
+            }
+
+            districtGroup.style.display = '';
+            districtSelect.required = true;
+
+            const districts = districtsByRegion[regionSelect.value] || [];
+            const previousValue = districtSelect.value;
+            districtSelect.innerHTML = '';
+            const placeholder = document.createElement('option');
+            placeholder.value = '';
+            placeholder.disabled = true;
+            placeholder.textContent = districts.length ? 'Select district' : 'Select region first';
+            placeholder.selected = true;
+            districtSelect.appendChild(placeholder);
+
+            for (const district of districts) {
+                const option = document.createElement('option');
+                option.value = district;
+                option.textContent = district;
+                if (district === previousValue) option.selected = true;
+                districtSelect.appendChild(option);
+            }
+        }
+
+        levelSelect.addEventListener('change', () => {
+            updateJurisdictionField();
+            updateDistrictField();
+        });
+        regionSelect.addEventListener('change', updateDistrictField);
         updateJurisdictionField();
+        updateDistrictField();
     </script>
     <script src="{% static 'js/pwa.js' %}"></script>
 </body>

@@ -20,6 +20,19 @@ class LocationService {
   static const double _goodAccuracyMeters = 30;
   static const Duration _maxWait = Duration(seconds: 35);
 
+  /// Returns the device's cached last-known position, if any, without
+  /// waiting for a fresh GPS fix. Used to show a location immediately while
+  /// [getBestLocation] keeps refining in the background, instead of leaving
+  /// the screen blank until a full fix comes in.
+  static Future<Position?> getLastKnownLocation() async {
+    if (!await _ensurePermission()) return null;
+    try {
+      return await Geolocator.getLastKnownPosition();
+    } catch (_) {
+      return null;
+    }
+  }
+
   static Future<Position> getBestLocation() async {
     if (!await _ensurePermission()) {
       throw LocationException(

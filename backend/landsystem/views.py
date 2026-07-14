@@ -7,7 +7,7 @@ from django.views.decorators.http import require_http_methods
 from django.http import JsonResponse, FileResponse, HttpResponseForbidden
 from django.db.models import Q, Count
 from django.utils import timezone
-from .models import Case, Citizen, OfficerProfile, CaseDocument
+from .models import Case, Citizen, OfficerProfile, CaseDocument, DISTRICTS_BY_REGION
 import json
 import math
 
@@ -21,17 +21,47 @@ LEVEL_ORDER = ['village', 'street', 'ward', 'district_land_officer', 'regional',
 # Regional/High Court officers cover the whole region, so no specific place applies.
 LEVELS_REQUIRING_JURISDICTION = ['village', 'street', 'ward', 'district_land_officer']
 
+# Village/Street/Ward officers additionally pick which district (within their
+# region) their jurisdiction falls under, from DISTRICTS_BY_REGION. District
+# Land Officers don't need this separately - their `jurisdiction` field
+# already names their district directly.
+LEVELS_REQUIRING_DISTRICT_FIELD = ['village', 'street', 'ward']
 
-# Region coordinates for mapping
+
+# Region coordinates for mapping - approximate coordinates of each region's
+# capital/main town, used to determine a case's region from GPS coordinates.
 REGION_COORDS = {
-    'arusha': {'lat': -3.3731, 'lng': 36.6753, 'name': 'Arusha Region'},
+    'arusha': {'lat': -3.3731, 'lng': 36.6819, 'name': 'Arusha'},
     'dar_es_salaam': {'lat': -6.8000, 'lng': 39.2800, 'name': 'Dar es Salaam'},
-    'dodoma': {'lat': -6.1856, 'lng': 35.7382, 'name': 'Dodoma Region'},
-    'iringa': {'lat': -7.7689, 'lng': 35.6998, 'name': 'Iringa Region'},
-    'kagera': {'lat': -1.2921, 'lng': 31.8974, 'name': 'Kagera Region'},
-    'mbeya': {'lat': -8.7731, 'lng': 33.4597, 'name': 'Mbeya Region'},
-    'mwanza': {'lat': -2.5167, 'lng': 32.9000, 'name': 'Mwanza Region'},
-    'tanga': {'lat': -5.0667, 'lng': 39.2000, 'name': 'Tanga Region'},
+    'dodoma': {'lat': -6.1630, 'lng': 35.7516, 'name': 'Dodoma'},
+    'geita': {'lat': -2.8719, 'lng': 32.2325, 'name': 'Geita'},
+    'iringa': {'lat': -7.7689, 'lng': 35.6998, 'name': 'Iringa'},
+    'kagera': {'lat': -1.3350, 'lng': 31.8123, 'name': 'Kagera'},
+    'katavi': {'lat': -6.3541, 'lng': 31.0691, 'name': 'Katavi'},
+    'kigoma': {'lat': -4.8766, 'lng': 29.6266, 'name': 'Kigoma'},
+    'kilimanjaro': {'lat': -3.3349, 'lng': 37.3407, 'name': 'Kilimanjaro'},
+    'lindi': {'lat': -9.9968, 'lng': 39.7144, 'name': 'Lindi'},
+    'manyara': {'lat': -4.2143, 'lng': 35.7497, 'name': 'Manyara'},
+    'mara': {'lat': -1.5006, 'lng': 33.8017, 'name': 'Mara'},
+    'mbeya': {'lat': -8.9094, 'lng': 33.4608, 'name': 'Mbeya'},
+    'morogoro': {'lat': -6.8235, 'lng': 37.6612, 'name': 'Morogoro'},
+    'mtwara': {'lat': -10.2692, 'lng': 40.1826, 'name': 'Mtwara'},
+    'mwanza': {'lat': -2.5167, 'lng': 32.9000, 'name': 'Mwanza'},
+    'njombe': {'lat': -9.3333, 'lng': 34.7667, 'name': 'Njombe'},
+    'pwani': {'lat': -6.7667, 'lng': 38.9333, 'name': 'Pwani'},
+    'rukwa': {'lat': -7.9667, 'lng': 31.6167, 'name': 'Rukwa'},
+    'ruvuma': {'lat': -10.6833, 'lng': 35.6500, 'name': 'Ruvuma'},
+    'shinyanga': {'lat': -3.6613, 'lng': 33.4249, 'name': 'Shinyanga'},
+    'simiyu': {'lat': -2.8000, 'lng': 33.9833, 'name': 'Simiyu'},
+    'singida': {'lat': -4.8167, 'lng': 34.7500, 'name': 'Singida'},
+    'songwe': {'lat': -8.9000, 'lng': 32.9333, 'name': 'Songwe'},
+    'tabora': {'lat': -5.0167, 'lng': 32.8000, 'name': 'Tabora'},
+    'tanga': {'lat': -5.0667, 'lng': 39.2000, 'name': 'Tanga'},
+    'kaskazini_unguja': {'lat': -5.8794, 'lng': 39.2664, 'name': 'Kaskazini Unguja'},
+    'kusini_unguja': {'lat': -6.1357, 'lng': 39.3621, 'name': 'Kusini Unguja'},
+    'mjini_magharibi': {'lat': -6.1659, 'lng': 39.2026, 'name': 'Mjini Magharibi'},
+    'kaskazini_pemba': {'lat': -5.0522, 'lng': 39.7286, 'name': 'Kaskazini Pemba'},
+    'kusini_pemba': {'lat': -5.2481, 'lng': 39.7686, 'name': 'Kusini Pemba'},
 }
 
 
@@ -399,11 +429,14 @@ def register_officer(request):
         password_confirm = request.POST.get('password_confirm')
         level = request.POST.get('level')
         region = request.POST.get('region')
+        district = request.POST.get('district', '').strip()
         jurisdiction = request.POST.get('jurisdiction', '').strip()
 
         common_context = {
             'levels': OfficerProfile.LEVEL_CHOICES,
             'regions': OfficerProfile.REGION_CHOICES,
+            'levels_requiring_district': LEVELS_REQUIRING_DISTRICT_FIELD,
+            'districts_by_region': DISTRICTS_BY_REGION,
         }
 
         if not all([first_name, last_name, email, phone, username, password, password_confirm, level, region]):
@@ -427,6 +460,15 @@ def register_officer(request):
                 **common_context,
             })
 
+        if level in LEVELS_REQUIRING_DISTRICT_FIELD:
+            if district not in DISTRICTS_BY_REGION.get(region, []):
+                return render(request, 'register_officer.html', {
+                    'error': 'Please select which district this officer\'s area falls under.',
+                    **common_context,
+                })
+        else:
+            district = ''
+
         # Regional/High Court officers cover the whole region, not a
         # specific place, so any jurisdiction entered for them is ignored.
         if level not in LEVELS_REQUIRING_JURISDICTION:
@@ -439,15 +481,20 @@ def register_officer(request):
             first_name=first_name,
             last_name=last_name,
         )
-        officer = OfficerProfile.objects.create(user=user, region=region, level=level, jurisdiction=jurisdiction, phone=phone)
+        officer = OfficerProfile.objects.create(
+            user=user, region=region, level=level, district=district, jurisdiction=jurisdiction, phone=phone,
+        )
 
-        place = f'{jurisdiction}, {officer.get_region_display()}' if jurisdiction else officer.get_region_display()
+        place_parts = [p for p in [jurisdiction, district, officer.get_region_display()] if p]
+        place = ', '.join(place_parts)
         messages.success(request, f'{first_name} {last_name} registered as {officer.get_level_display()} for {place}.')
         return redirect('officer_list')
 
     return render(request, 'register_officer.html', {
         'levels': OfficerProfile.LEVEL_CHOICES,
         'regions': OfficerProfile.REGION_CHOICES,
+        'levels_requiring_district': LEVELS_REQUIRING_DISTRICT_FIELD,
+        'districts_by_region': DISTRICTS_BY_REGION,
         'initial_level': request.GET.get('level', ''),
         'initial_region': request.GET.get('region', ''),
     })
@@ -468,22 +515,40 @@ def edit_officer_jurisdiction(request, officer_id):
         return redirect('officer_list')
 
     jurisdiction_label = officer.get_level_display().replace(' Officer', '')
+    needs_district = officer.level in LEVELS_REQUIRING_DISTRICT_FIELD
+    districts = DISTRICTS_BY_REGION.get(officer.region, [])
+
+    common_context = {
+        'officer': officer,
+        'jurisdiction_label': jurisdiction_label,
+        'needs_district': needs_district,
+        'districts': districts,
+    }
 
     if request.method == 'POST':
         jurisdiction = request.POST.get('jurisdiction', '').strip()
+        district = request.POST.get('district', '').strip()
+
         if not jurisdiction:
             return render(request, 'edit_officer_jurisdiction.html', {
-                'officer': officer,
-                'jurisdiction_label': jurisdiction_label,
                 'error': f'Please enter which {jurisdiction_label.lower()} this officer serves.',
+                **common_context,
+            })
+
+        if needs_district and district not in districts:
+            return render(request, 'edit_officer_jurisdiction.html', {
+                'error': 'Please select which district this officer\'s area falls under.',
+                **common_context,
             })
 
         officer.jurisdiction = jurisdiction
+        if needs_district:
+            officer.district = district
         officer.save()
         messages.success(request, f'Updated jurisdiction for {officer.user.get_full_name() or officer.user.username}.')
         return redirect('officer_list')
 
-    return render(request, 'edit_officer_jurisdiction.html', {'officer': officer, 'jurisdiction_label': jurisdiction_label})
+    return render(request, 'edit_officer_jurisdiction.html', common_context)
 
 
 @login_required(login_url='login')

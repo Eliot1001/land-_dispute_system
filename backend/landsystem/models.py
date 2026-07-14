@@ -4,6 +4,82 @@ from django.utils import timezone
 import os
 
 
+# All 31 of Tanzania's regions (26 mainland + 5 Zanzibar). Shared by
+# OfficerProfile and Case so region codes stay in sync everywhere.
+TANZANIA_REGIONS = [
+    ('arusha', 'Arusha'),
+    ('dar_es_salaam', 'Dar es Salaam'),
+    ('dodoma', 'Dodoma'),
+    ('geita', 'Geita'),
+    ('iringa', 'Iringa'),
+    ('kagera', 'Kagera'),
+    ('katavi', 'Katavi'),
+    ('kigoma', 'Kigoma'),
+    ('kilimanjaro', 'Kilimanjaro'),
+    ('lindi', 'Lindi'),
+    ('manyara', 'Manyara'),
+    ('mara', 'Mara'),
+    ('mbeya', 'Mbeya'),
+    ('morogoro', 'Morogoro'),
+    ('mtwara', 'Mtwara'),
+    ('mwanza', 'Mwanza'),
+    ('njombe', 'Njombe'),
+    ('pwani', 'Pwani (Coast)'),
+    ('rukwa', 'Rukwa'),
+    ('ruvuma', 'Ruvuma'),
+    ('shinyanga', 'Shinyanga'),
+    ('simiyu', 'Simiyu'),
+    ('singida', 'Singida'),
+    ('songwe', 'Songwe'),
+    ('tabora', 'Tabora'),
+    ('tanga', 'Tanga'),
+    ('kaskazini_unguja', 'Kaskazini Unguja (North Unguja)'),
+    ('kusini_unguja', 'Kusini Unguja (South Unguja)'),
+    ('mjini_magharibi', 'Mjini Magharibi (Urban West)'),
+    ('kaskazini_pemba', 'Kaskazini Pemba (North Pemba)'),
+    ('kusini_pemba', 'Kusini Pemba (South Pemba)'),
+]
+
+# Districts/councils within each region, for the district dropdown shown
+# when registering a Village/Street/Ward officer. Best-effort from publicly
+# documented administrative divisions - Tanzania has periodically split
+# districts into more councils, so this may not reflect the very latest
+# subdivisions. Correct/extend here if a district is missing.
+DISTRICTS_BY_REGION = {
+    'arusha': ['Arusha City', 'Arusha', 'Karatu', 'Longido', 'Meru', 'Monduli', 'Ngorongoro'],
+    'dar_es_salaam': ['Ilala', 'Kinondoni', 'Temeke', 'Ubungo', 'Kigamboni'],
+    'dodoma': ['Dodoma City', 'Bahi', 'Chamwino', 'Chemba', 'Kondoa', 'Kondoa Town', 'Mpwapwa', 'Kongwa'],
+    'geita': ['Geita Town', 'Geita', 'Bukombe', 'Chato', 'Mbogwe', "Nyang'hwale"],
+    'iringa': ['Iringa Municipal', 'Iringa', 'Kilolo', 'Mafinga Town', 'Mufindi'],
+    'kagera': ['Bukoba Municipal', 'Bukoba', 'Biharamulo', 'Karagwe', 'Kyerwa', 'Missenyi', 'Muleba', 'Ngara'],
+    'katavi': ['Mpanda Town', 'Mpanda', 'Mlele', 'Nsimbo'],
+    'kigoma': ['Kigoma-Ujiji', 'Kasulu Town', 'Kasulu', 'Kibondo', 'Buhigwe', 'Kakonko', 'Uvinza'],
+    'kilimanjaro': ['Moshi Municipal', 'Moshi', 'Hai', 'Mwanga', 'Rombo', 'Same', 'Siha'],
+    'lindi': ['Lindi Municipal', 'Lindi', 'Kilwa', 'Liwale', 'Nachingwea', 'Ruangwa'],
+    'manyara': ['Babati Town', 'Babati', 'Hanang', 'Kiteto', 'Mbulu', 'Simanjiro'],
+    'mara': ['Musoma Municipal', 'Musoma', 'Bunda', 'Butiama', 'Rorya', 'Serengeti', 'Tarime'],
+    'mbeya': ['Mbeya City', 'Mbeya', 'Busokelo', 'Chunya', 'Kyela', 'Rungwe'],
+    'morogoro': ['Morogoro Municipal', 'Morogoro', 'Gairo', 'Kilombero', 'Kilosa', 'Malinyi', 'Mvomero', 'Ulanga'],
+    'mtwara': ['Mtwara Municipal', 'Mtwara', 'Masasi Town', 'Masasi', 'Nanyumbu', 'Newala', 'Tandahimba'],
+    'mwanza': ['Ilemela', 'Nyamagana', 'Kwimba', 'Magu', 'Misungwi', 'Sengerema', 'Ukerewe'],
+    'njombe': ['Njombe Town', 'Njombe', 'Ludewa', 'Makambako', 'Makete', "Wanging'ombe"],
+    'pwani': ['Kibaha Town', 'Kibaha', 'Bagamoyo', 'Kisarawe', 'Mafia', 'Mkuranga', 'Rufiji'],
+    'rukwa': ['Sumbawanga Municipal', 'Sumbawanga', 'Kalambo', 'Nkasi'],
+    'ruvuma': ['Songea Municipal', 'Songea', 'Mbinga', 'Namtumbo', 'Nyasa', 'Tunduru'],
+    'shinyanga': ['Shinyanga Municipal', 'Shinyanga', 'Kahama Town', 'Kishapu', 'Msalala', 'Ushetu'],
+    'simiyu': ['Bariadi Town', 'Bariadi', 'Busega', 'Itilima', 'Maswa', 'Meatu'],
+    'singida': ['Singida Municipal', 'Singida', 'Ikungi', 'Iramba', 'Manyoni', 'Mkalama'],
+    'songwe': ['Vwawa', 'Ileje', 'Mbozi', 'Momba', 'Songwe'],
+    'tabora': ['Tabora Municipal', 'Igunga', 'Kaliua', 'Nzega', 'Sikonge', 'Urambo', 'Uyui'],
+    'tanga': ['Tanga City', 'Handeni Town', 'Handeni', 'Kilindi', 'Korogwe Town', 'Korogwe', 'Lushoto', 'Mkinga', 'Muheza', 'Pangani'],
+    'kaskazini_unguja': ['Kaskazini A', 'Kaskazini B'],
+    'kusini_unguja': ['Kati', 'Kusini'],
+    'mjini_magharibi': ['Mjini', 'Magharibi A', 'Magharibi B'],
+    'kaskazini_pemba': ['Wete', 'Micheweni'],
+    'kusini_pemba': ['Chake Chake', 'Mkoani'],
+}
+
+
 class Citizen(models.Model):
     """Model for citizen users"""
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='citizen_profile')
@@ -20,16 +96,7 @@ class Citizen(models.Model):
 
 class OfficerProfile(models.Model):
     """Model for case officer profiles"""
-    REGION_CHOICES = [
-        ('arusha', 'Arusha Region'),
-        ('dar_es_salaam', 'Dar es Salaam'),
-        ('dodoma', 'Dodoma Region'),
-        ('iringa', 'Iringa Region'),
-        ('kagera', 'Kagera Region'),
-        ('mbeya', 'Mbeya Region'),
-        ('mwanza', 'Mwanza Region'),
-        ('tanga', 'Tanga Region'),
-    ]
+    REGION_CHOICES = TANZANIA_REGIONS
 
     # Ordered lowest to highest. A case starts at the first level and
     # escalation moves it one step down this list at a time.
@@ -45,10 +112,16 @@ class OfficerProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='officer_profile')
     region = models.CharField(max_length=50, choices=REGION_CHOICES)
     level = models.CharField(max_length=30, choices=LEVEL_CHOICES, default='village')
-    # The specific village/ward/district name this officer serves within
-    # their region - e.g. "Chamwino" for a village officer, "Makole" for a
-    # ward officer. Not applicable for Regional/High Court officers, who
-    # cover the whole region.
+    # Which district (within region) a Village/Street/Ward officer's
+    # jurisdiction falls under - chosen from DISTRICTS_BY_REGION. Not used
+    # for District Land Officers, whose `jurisdiction` field already names
+    # their district directly, or Regional/High Court, who cover the whole
+    # region.
+    district = models.CharField(max_length=100, blank=True)
+    # The specific village/street/ward/district name this officer serves
+    # within their region - e.g. "Chamwino" for a village officer, "Makole"
+    # for a ward officer. Not applicable for Regional/High Court officers,
+    # who cover the whole region.
     jurisdiction = models.CharField(max_length=255, blank=True)
     phone = models.CharField(max_length=20)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -69,17 +142,9 @@ class Case(models.Model):
         ('escalated', 'Escalated'),
     ]
     
-    REGION_CHOICES = [
-        ('arusha', 'Arusha Region'),
-        ('dar_es_salaam', 'Dar es Salaam'),
-        ('dodoma', 'Dodoma Region'),
-        ('iringa', 'Iringa Region'),
-        ('kagera', 'Kagera Region'),
-        ('mbeya', 'Mbeya Region'),
-        ('mwanza', 'Mwanza Region'),
-        ('tanga', 'Tanga Region'),
-    ]
-    
+    # Same region list as OfficerProfile.REGION_CHOICES.
+    REGION_CHOICES = OfficerProfile.REGION_CHOICES
+
     # Same ordered hierarchy as OfficerProfile.LEVEL_CHOICES. A case starts
     # with the village officer and escalation steps it up one level at a time.
     LEVEL_CHOICES = OfficerProfile.LEVEL_CHOICES
