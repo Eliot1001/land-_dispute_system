@@ -7,7 +7,7 @@ from django.views.decorators.http import require_http_methods
 from django.http import JsonResponse, FileResponse, HttpResponseForbidden
 from django.db.models import Q, Count
 from django.utils import timezone
-from .models import Case, Citizen, OfficerProfile, CaseDocument, CaseFeedback, DISTRICTS_BY_REGION, WARDS_BY_DISTRICT
+from .models import Case, Citizen, OfficerProfile, CaseDocument, CaseFeedback, DISTRICTS_BY_REGION, WARDS_BY_DISTRICT, STREETS_BY_WARD
 import json
 import math
 
@@ -515,6 +515,7 @@ def register_officer(request):
             'levels_requiring_district': LEVELS_REQUIRING_DISTRICT_FIELD,
             'districts_by_region': DISTRICTS_BY_REGION,
             'wards_by_district': WARDS_BY_DISTRICT,
+            'streets_by_ward': STREETS_BY_WARD,
         }
 
         if not all([first_name, last_name, email, phone, username, password, password_confirm, level, region]):
@@ -587,6 +588,7 @@ def register_officer(request):
         'levels_requiring_district': LEVELS_REQUIRING_DISTRICT_FIELD,
         'districts_by_region': DISTRICTS_BY_REGION,
         'wards_by_district': WARDS_BY_DISTRICT,
+        'streets_by_ward': STREETS_BY_WARD,
         'initial_level': request.GET.get('level', ''),
         'initial_region': request.GET.get('region', ''),
     })
@@ -610,11 +612,13 @@ def edit_officer_jurisdiction(request, officer_id):
     # Village/Street/Ward officers all pick district + ward. A Ward
     # officer's jurisdiction IS their ward, so they don't get a separate
     # free-text jurisdiction field - Village/Street/District Land Officers do.
+    # Village/Street officers additionally pick their street/village within
+    # that ward, from STREETS_BY_WARD where available.
     needs_district = officer.level in LEVELS_REQUIRING_DISTRICT_FIELD
     needs_ward = needs_district
     show_jurisdiction_field = officer.level != 'ward'
+    jurisdiction_uses_ward = officer.level in ('village', 'street')
     districts = DISTRICTS_BY_REGION.get(officer.region, [])
-    wards = WARDS_BY_DISTRICT.get(officer.district, [])
 
     common_context = {
         'officer': officer,
@@ -622,8 +626,10 @@ def edit_officer_jurisdiction(request, officer_id):
         'needs_district': needs_district,
         'needs_ward': needs_ward,
         'show_jurisdiction_field': show_jurisdiction_field,
+        'jurisdiction_uses_ward': jurisdiction_uses_ward,
         'districts': districts,
         'wards_by_district': WARDS_BY_DISTRICT,
+        'streets_by_ward': STREETS_BY_WARD,
     }
 
     if request.method == 'POST':

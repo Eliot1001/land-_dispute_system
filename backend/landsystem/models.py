@@ -134,6 +134,17 @@ WARDS_BY_DISTRICT = {
     'Songea Municipal': ['Bombambili', 'Mji Mkuu', 'Mshangano', 'Msamala', 'Ruvuma'],
 }
 
+# Streets/mitaa (for Street officers) and villages/vitongoji (for Village
+# officers) within each ward, for the dropdown shown after picking a ward
+# during registration. Starts empty deliberately - this level of detail
+# isn't reliably documented publicly, so rather than guess, the
+# registration form falls back to a free-text field for every ward until an
+# authoritative list is added here, keyed by ward name (e.g.
+# STREETS_BY_WARD['Kariakoo'] = ['Congo', 'Livingstone', ...]).
+STREETS_BY_WARD = {
+    'Makongo': ['Changanyikeni', 'Makongo Juu', 'Mlalakuwa', 'Mbuyuni'],
+}
+
 
 class Citizen(models.Model):
     """Model for citizen users"""

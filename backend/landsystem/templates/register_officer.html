@@ -334,8 +334,11 @@
                         </div>
 
                         <div class="form-group" id="jurisdictionGroup">
-                            <label for="jurisdiction" id="jurisdictionLabel">Village Name</label>
-                            <input type="text" id="jurisdiction" name="jurisdiction" placeholder="e.g., Chamwino">
+                            <label for="jurisdictionText" id="jurisdictionLabel">Village Name</label>
+                            <select id="jurisdictionSelect" name="jurisdiction" style="display: none;">
+                                <option value="" disabled selected>Select ward first</option>
+                            </select>
+                            <input type="text" id="jurisdictionText" name="jurisdiction" placeholder="e.g., Chamwino">
                         </div>
                     </div>
 
@@ -374,6 +377,7 @@
 
     {{ districts_by_region|json_script:"districts-by-region-data" }}
     {{ wards_by_district|json_script:"wards-by-district-data" }}
+    {{ streets_by_ward|json_script:"streets-by-ward-data" }}
     {{ levels_requiring_district|json_script:"levels-requiring-district-data" }}
     <script>
         // Village/Street/District officers serve a specific place within
@@ -392,31 +396,89 @@
         // their area falls under, populated from the region they've chosen,
         // then which ward within that district, populated from wardsByDistrict
         // where available - otherwise a free-text field is shown instead.
+        // Village/Street officers then pick their specific street/village
+        // within that ward, populated from streetsByWard where available.
         const districtsByRegion = JSON.parse(document.getElementById('districts-by-region-data').textContent);
         const wardsByDistrict = JSON.parse(document.getElementById('wards-by-district-data').textContent);
+        const streetsByWard = JSON.parse(document.getElementById('streets-by-ward-data').textContent);
         const levelsRequiringDistrict = JSON.parse(document.getElementById('levels-requiring-district-data').textContent);
 
         const levelSelect = document.getElementById('level');
         const regionSelect = document.getElementById('region');
         const jurisdictionGroup = document.getElementById('jurisdictionGroup');
         const jurisdictionLabel = document.getElementById('jurisdictionLabel');
-        const jurisdictionInput = document.getElementById('jurisdiction');
+        const jurisdictionSelect = document.getElementById('jurisdictionSelect');
+        const jurisdictionText = document.getElementById('jurisdictionText');
         const districtGroup = document.getElementById('districtGroup');
         const districtSelect = document.getElementById('district');
         const wardGroup = document.getElementById('wardGroup');
         const wardSelect = document.getElementById('wardSelect');
         const wardText = document.getElementById('wardText');
 
+        function currentWardValue() {
+            return wardSelect.disabled ? wardText.value : wardSelect.value;
+        }
+
         function updateJurisdictionField() {
             const label = jurisdictionLabels[levelSelect.value];
             if (label) {
                 jurisdictionGroup.style.display = '';
                 jurisdictionLabel.textContent = label;
-                jurisdictionInput.required = true;
             } else {
                 jurisdictionGroup.style.display = 'none';
-                jurisdictionInput.required = false;
-                jurisdictionInput.value = '';
+            }
+            updateJurisdictionOptions();
+        }
+
+        function updateJurisdictionOptions() {
+            const needed = !!jurisdictionLabels[levelSelect.value];
+            if (!needed) {
+                jurisdictionSelect.style.display = 'none';
+                jurisdictionSelect.disabled = true;
+                jurisdictionSelect.required = false;
+                jurisdictionText.style.display = '';
+                jurisdictionText.disabled = true;
+                jurisdictionText.required = false;
+                jurisdictionText.value = '';
+                return;
+            }
+
+            const streets = streetsByWard[currentWardValue()] || [];
+
+            if (streets.length) {
+                jurisdictionText.style.display = 'none';
+                jurisdictionText.disabled = true;
+                jurisdictionText.required = false;
+                jurisdictionText.value = '';
+
+                jurisdictionSelect.style.display = '';
+                jurisdictionSelect.disabled = false;
+                jurisdictionSelect.required = true;
+
+                const previousValue = jurisdictionSelect.value;
+                jurisdictionSelect.innerHTML = '';
+                const placeholder = document.createElement('option');
+                placeholder.value = '';
+                placeholder.disabled = true;
+                placeholder.selected = true;
+                placeholder.textContent = 'Select ' + jurisdictionLabel.textContent.replace(' Name', '').toLowerCase();
+                jurisdictionSelect.appendChild(placeholder);
+
+                for (const street of streets) {
+                    const option = document.createElement('option');
+                    option.value = street;
+                    option.textContent = street;
+                    if (street === previousValue) option.selected = true;
+                    jurisdictionSelect.appendChild(option);
+                }
+            } else {
+                jurisdictionSelect.style.display = 'none';
+                jurisdictionSelect.disabled = true;
+                jurisdictionSelect.required = false;
+
+                jurisdictionText.style.display = '';
+                jurisdictionText.disabled = false;
+                jurisdictionText.required = true;
             }
         }
 
@@ -504,18 +566,25 @@
         }
 
         levelSelect.addEventListener('change', () => {
-            updateJurisdictionField();
             updateDistrictField();
             updateWardField();
+            updateJurisdictionField();
         });
         regionSelect.addEventListener('change', () => {
             updateDistrictField();
             updateWardField();
+            updateJurisdictionOptions();
         });
-        districtSelect.addEventListener('change', updateWardField);
-        updateJurisdictionField();
+        districtSelect.addEventListener('change', () => {
+            updateWardField();
+            updateJurisdictionOptions();
+        });
+        wardSelect.addEventListener('change', updateJurisdictionOptions);
+        wardText.addEventListener('input', updateJurisdictionOptions);
+
         updateDistrictField();
         updateWardField();
+        updateJurisdictionField();
     </script>
     <script src="{% static 'js/pwa.js' %}"></script>
 </body>

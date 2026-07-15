@@ -271,8 +271,13 @@
 
                     {% if show_jurisdiction_field %}
                     <div class="form-group">
-                        <label for="jurisdiction">{{ jurisdiction_label }} Name</label>
-                        <input type="text" id="jurisdiction" name="jurisdiction" value="{{ officer.jurisdiction }}" placeholder="e.g., Chamwino" required>
+                        <label for="jurisdictionText">{{ jurisdiction_label }} Name</label>
+                        {% if jurisdiction_uses_ward %}
+                        <select id="jurisdictionSelect" name="jurisdiction">
+                            <option value="" disabled selected>Select ward first</option>
+                        </select>
+                        {% endif %}
+                        <input type="text" id="jurisdictionText" name="jurisdiction" value="{{ officer.jurisdiction }}" placeholder="e.g., Chamwino" {% if not jurisdiction_uses_ward %}required{% endif %}>
                     </div>
                     {% endif %}
 
@@ -291,6 +296,7 @@
 
     {% if needs_ward %}
     {{ wards_by_district|json_script:"wards-by-district-data" }}
+    {% if jurisdiction_uses_ward %}{{ streets_by_ward|json_script:"streets-by-ward-data" }}{% endif %}
     <script>
         const wardsByDistrict = JSON.parse(document.getElementById('wards-by-district-data').textContent);
         const currentWard = "{{ officer.ward|default:""|escapejs }}";
@@ -298,6 +304,10 @@
         const districtSelect = document.getElementById('district');
         const wardSelect = document.getElementById('wardSelect');
         const wardText = document.getElementById('wardText');
+
+        function currentWardValue() {
+            return wardSelect.disabled ? wardText.value : wardSelect.value;
+        }
 
         function updateWardField() {
             const wards = wardsByDistrict[districtSelect ? districtSelect.value : ''] || [];
@@ -339,8 +349,64 @@
             }
         }
 
-        if (districtSelect) districtSelect.addEventListener('change', updateWardField);
+        {% if jurisdiction_uses_ward %}
+        const streetsByWard = JSON.parse(document.getElementById('streets-by-ward-data').textContent);
+        const currentJurisdiction = "{{ officer.jurisdiction|default:""|escapejs }}";
+        const jurisdictionSelect = document.getElementById('jurisdictionSelect');
+        const jurisdictionText = document.getElementById('jurisdictionText');
+
+        function updateJurisdictionOptions() {
+            const streets = streetsByWard[currentWardValue()] || [];
+
+            if (streets.length) {
+                jurisdictionText.style.display = 'none';
+                jurisdictionText.disabled = true;
+                jurisdictionText.required = false;
+
+                jurisdictionSelect.style.display = '';
+                jurisdictionSelect.disabled = false;
+                jurisdictionSelect.required = true;
+
+                const previousValue = jurisdictionSelect.value || currentJurisdiction;
+                jurisdictionSelect.innerHTML = '';
+                const placeholder = document.createElement('option');
+                placeholder.value = '';
+                placeholder.disabled = true;
+                placeholder.selected = true;
+                placeholder.textContent = '{{ jurisdiction_label|escapejs }}';
+                jurisdictionSelect.appendChild(placeholder);
+
+                for (const street of streets) {
+                    const option = document.createElement('option');
+                    option.value = street;
+                    option.textContent = street;
+                    if (street === previousValue) option.selected = true;
+                    jurisdictionSelect.appendChild(option);
+                }
+            } else {
+                jurisdictionSelect.style.display = 'none';
+                jurisdictionSelect.disabled = true;
+                jurisdictionSelect.required = false;
+
+                jurisdictionText.style.display = '';
+                jurisdictionText.disabled = false;
+                jurisdictionText.required = true;
+                if (!jurisdictionText.value) jurisdictionText.value = currentJurisdiction;
+            }
+        }
+
+        wardSelect.addEventListener('change', updateJurisdictionOptions);
+        wardText.addEventListener('input', updateJurisdictionOptions);
+        {% endif %}
+
+        if (districtSelect) {
+            districtSelect.addEventListener('change', () => {
+                updateWardField();
+                {% if jurisdiction_uses_ward %}updateJurisdictionOptions();{% endif %}
+            });
+        }
         updateWardField();
+        {% if jurisdiction_uses_ward %}updateJurisdictionOptions();{% endif %}
     </script>
     {% endif %}
     <script src="{% static 'js/pwa.js' %}"></script>
