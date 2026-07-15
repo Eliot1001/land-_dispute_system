@@ -259,10 +259,22 @@
                     </div>
                     {% endif %}
 
+                    {% if needs_ward %}
+                    <div class="form-group">
+                        <label for="ward">Ward</label>
+                        <select id="wardSelect" name="ward">
+                            <option value="" disabled selected>Select district first</option>
+                        </select>
+                        <input type="text" id="wardText" name="ward" value="{{ officer.ward }}" placeholder="Enter ward name" style="display: none;">
+                    </div>
+                    {% endif %}
+
+                    {% if show_jurisdiction_field %}
                     <div class="form-group">
                         <label for="jurisdiction">{{ jurisdiction_label }} Name</label>
                         <input type="text" id="jurisdiction" name="jurisdiction" value="{{ officer.jurisdiction }}" placeholder="e.g., Chamwino" required>
                     </div>
+                    {% endif %}
 
                     <div class="action-buttons">
                         <button type="submit" class="btn btn-primary">
@@ -277,6 +289,60 @@
         </div>
     </div>
 
+    {% if needs_ward %}
+    {{ wards_by_district|json_script:"wards-by-district-data" }}
+    <script>
+        const wardsByDistrict = JSON.parse(document.getElementById('wards-by-district-data').textContent);
+        const currentWard = "{{ officer.ward|default:""|escapejs }}";
+
+        const districtSelect = document.getElementById('district');
+        const wardSelect = document.getElementById('wardSelect');
+        const wardText = document.getElementById('wardText');
+
+        function updateWardField() {
+            const wards = wardsByDistrict[districtSelect ? districtSelect.value : ''] || [];
+
+            if (wards.length) {
+                wardText.style.display = 'none';
+                wardText.disabled = true;
+                wardText.required = false;
+
+                wardSelect.style.display = '';
+                wardSelect.disabled = false;
+                wardSelect.required = true;
+
+                const previousValue = wardSelect.value || currentWard;
+                wardSelect.innerHTML = '';
+                const placeholder = document.createElement('option');
+                placeholder.value = '';
+                placeholder.disabled = true;
+                placeholder.textContent = 'Select ward';
+                placeholder.selected = true;
+                wardSelect.appendChild(placeholder);
+
+                for (const ward of wards) {
+                    const option = document.createElement('option');
+                    option.value = ward;
+                    option.textContent = ward;
+                    if (ward === previousValue) option.selected = true;
+                    wardSelect.appendChild(option);
+                }
+            } else {
+                wardSelect.style.display = 'none';
+                wardSelect.disabled = true;
+                wardSelect.required = false;
+
+                wardText.style.display = '';
+                wardText.disabled = false;
+                wardText.required = true;
+                if (!wardText.value) wardText.value = currentWard;
+            }
+        }
+
+        if (districtSelect) districtSelect.addEventListener('change', updateWardField);
+        updateWardField();
+    </script>
+    {% endif %}
     <script src="{% static 'js/pwa.js' %}"></script>
 </body>
 </html>

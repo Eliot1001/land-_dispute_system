@@ -79,6 +79,60 @@ DISTRICTS_BY_REGION = {
     'kusini_pemba': ['Chake Chake', 'Mkoani'],
 }
 
+# Wards within each district, for the ward dropdown shown when registering a
+# Village/Street/Ward officer (chosen after district). This is NOT
+# exhaustive - Tanzania has several thousand wards nationwide and many are
+# not reliably documented publicly, so only districts with well-verified
+# ward lists are included here. For any district not listed, the
+# registration form falls back to a free-text ward field instead of a
+# dropdown, so registration always works - add a district's ward list here
+# once you have an authoritative source (e.g. TAMISEMI/NBS) to switch it
+# over to a dropdown.
+WARDS_BY_DISTRICT = {
+    'Ilala': [
+        'Buguruni', 'Chanika', 'Gongo la Mboto', 'Ilala', 'Jangwani',
+        'Kariakoo', 'Kipawa', 'Kisutu', 'Kiwalani', 'Mchikichini',
+        'Msongola', 'Pugu', 'Segerea', 'Tabata', 'Ukonga',
+        'Upanga Magharibi', 'Upanga Mashariki', 'Vingunguti', 'Kivukoni',
+    ],
+    'Kinondoni': [
+        'Kawe', 'Kijitonyama', 'Kinondoni', 'Kunduchi', 'Magomeni',
+        'Mikocheni', 'Msasani', 'Mwananyamala', 'Ndugumbi', 'Tandale',
+        'Wazo', 'Kigogo', 'Hananasif', 'Manzese', 'Mzimuni',
+    ],
+    'Temeke': [
+        'Azimio', 'Chang\'ombe', 'Kigamboni', 'Kurasini', 'Mbagala',
+        'Miburani', 'Sandali', 'Tandika', 'Temeke', 'Yombo Vituka',
+        'Keko', 'Mtoni',
+    ],
+    'Arusha City': [
+        'Baraa', 'Elerai', 'Engutoto', 'Kaloleni', 'Kimandolu', 'Kati',
+        'Lemara', 'Levolosi', 'Muriet', 'Ngarenaro', 'Olasiti', 'Sekei',
+        'Sombetini', 'Terrat', 'Themi', 'Unga Limited',
+    ],
+    'Dodoma City': [
+        'Chamwino', 'Chidachi', 'Hombolo', 'Kikuyu', 'Kizota', 'Makole',
+        'Mkonze', 'Mnadani', 'Nkuhungu', 'Ntyuka', 'Uhuru', 'Viwandani',
+        'Zuzu',
+    ],
+    'Mbeya City': [
+        'Forest', 'Iyunga', 'Ilomba', 'Isanga', 'Itagano', 'Itezi',
+        'Iyela', 'Ruanda', 'Sisimba', 'Sokoine', 'Uyole',
+    ],
+    'Moshi Municipal': [
+        'Bondeni', 'Kaloleni', 'Kiusa', 'Longuo', 'Majengo', 'Mawenzi',
+        'Msaranga', 'Njoro', 'Pasua', 'Rau', 'Shantytown', 'Soweto',
+    ],
+    'Morogoro Municipal': [
+        'Boma', 'Kihonda', 'Kingo', 'Kingolwira', 'Mafiga', 'Mazimbu',
+        'Mbuyuni', 'Mji Mkuu', 'Mwembesongo', 'Sabasaba', 'Sultan Area',
+    ],
+    'Ilemela': ['Buswelu', 'Bugogwa', 'Igoma', 'Kirumba', 'Mkolani', 'Nyamanoro'],
+    'Nyamagana': ['Butimba', 'Igogo', 'Isamilo', 'Mahina', 'Mirongo', 'Mkuyuni', 'Nyamagana', 'Pamba'],
+    'Tanga City': ['Chumbageni', 'Makorora', 'Mzingani', 'Ngamiani Kaskazini', 'Ngamiani Kusini', 'Tanga'],
+    'Songea Municipal': ['Bombambili', 'Mji Mkuu', 'Mshangano', 'Msamala', 'Ruvuma'],
+}
+
 
 class Citizen(models.Model):
     """Model for citizen users"""
@@ -118,6 +172,12 @@ class OfficerProfile(models.Model):
     # their district directly, or Regional/High Court, who cover the whole
     # region.
     district = models.CharField(max_length=100, blank=True)
+    # The specific ward a Village/Street/Ward officer's area falls under -
+    # chosen from WARDS_BY_DISTRICT where available, otherwise typed in
+    # directly. For a Ward officer, this IS their jurisdiction (mirrored into
+    # `jurisdiction` below); for Village/Street officers it's the ward their
+    # village/street sits in, one level more specific than `district`.
+    ward = models.CharField(max_length=255, blank=True)
     # The specific village/street/ward/district name this officer serves
     # within their region - e.g. "Chamwino" for a village officer, "Makole"
     # for a ward officer. Not applicable for Regional/High Court officers,

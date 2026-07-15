@@ -325,6 +325,14 @@
                             </select>
                         </div>
 
+                        <div class="form-group" id="wardGroup">
+                            <label for="ward">Ward</label>
+                            <select id="wardSelect" name="ward">
+                                <option value="" disabled selected>Select district first</option>
+                            </select>
+                            <input type="text" id="wardText" name="ward" placeholder="Enter ward name" style="display: none;">
+                        </div>
+
                         <div class="form-group" id="jurisdictionGroup">
                             <label for="jurisdiction" id="jurisdictionLabel">Village Name</label>
                             <input type="text" id="jurisdiction" name="jurisdiction" placeholder="e.g., Chamwino">
@@ -365,22 +373,27 @@
     </div>
 
     {{ districts_by_region|json_script:"districts-by-region-data" }}
+    {{ wards_by_district|json_script:"wards-by-district-data" }}
     {{ levels_requiring_district|json_script:"levels-requiring-district-data" }}
     <script>
-        // Village/Ward/District officers serve a specific place within their
-        // region, so the jurisdiction field's label (and whether it's shown
-        // at all) depends on the selected level. Regional/High Court cover
-        // the whole region, so no specific place applies to them.
+        // Village/Street/District officers serve a specific place within
+        // their region, so the jurisdiction field's label (and whether it's
+        // shown at all) depends on the selected level. A Ward officer's
+        // jurisdiction IS the ward they pick below, so it has no entry here.
+        // Regional/High Court cover the whole region, so no specific place
+        // applies to them either.
         const jurisdictionLabels = {
             village: 'Village Name',
             street: 'Street Name',
-            ward: 'Ward Name',
             district_land_officer: 'District Name',
         };
 
-        // Village/Street/Ward officers additionally pick which district their
-        // area falls under, populated from the region they've chosen.
+        // Village/Street/Ward officers additionally pick which district
+        // their area falls under, populated from the region they've chosen,
+        // then which ward within that district, populated from wardsByDistrict
+        // where available - otherwise a free-text field is shown instead.
         const districtsByRegion = JSON.parse(document.getElementById('districts-by-region-data').textContent);
+        const wardsByDistrict = JSON.parse(document.getElementById('wards-by-district-data').textContent);
         const levelsRequiringDistrict = JSON.parse(document.getElementById('levels-requiring-district-data').textContent);
 
         const levelSelect = document.getElementById('level');
@@ -390,6 +403,9 @@
         const jurisdictionInput = document.getElementById('jurisdiction');
         const districtGroup = document.getElementById('districtGroup');
         const districtSelect = document.getElementById('district');
+        const wardGroup = document.getElementById('wardGroup');
+        const wardSelect = document.getElementById('wardSelect');
+        const wardText = document.getElementById('wardText');
 
         function updateJurisdictionField() {
             const label = jurisdictionLabels[levelSelect.value];
@@ -435,13 +451,71 @@
             }
         }
 
+        function updateWardField() {
+            const needsWard = levelsRequiringDistrict.includes(levelSelect.value);
+            if (!needsWard) {
+                wardGroup.style.display = 'none';
+                wardSelect.disabled = true;
+                wardSelect.required = false;
+                wardText.disabled = true;
+                wardText.required = false;
+                wardText.value = '';
+                return;
+            }
+
+            wardGroup.style.display = '';
+            const wards = wardsByDistrict[districtSelect.value] || [];
+
+            if (wards.length) {
+                wardText.style.display = 'none';
+                wardText.disabled = true;
+                wardText.required = false;
+                wardText.value = '';
+
+                wardSelect.style.display = '';
+                wardSelect.disabled = false;
+                wardSelect.required = true;
+
+                const previousValue = wardSelect.value;
+                wardSelect.innerHTML = '';
+                const placeholder = document.createElement('option');
+                placeholder.value = '';
+                placeholder.disabled = true;
+                placeholder.textContent = 'Select ward';
+                placeholder.selected = true;
+                wardSelect.appendChild(placeholder);
+
+                for (const ward of wards) {
+                    const option = document.createElement('option');
+                    option.value = ward;
+                    option.textContent = ward;
+                    if (ward === previousValue) option.selected = true;
+                    wardSelect.appendChild(option);
+                }
+            } else {
+                wardSelect.style.display = 'none';
+                wardSelect.disabled = true;
+                wardSelect.required = false;
+
+                wardText.style.display = '';
+                wardText.disabled = false;
+                wardText.required = true;
+            }
+        }
+
         levelSelect.addEventListener('change', () => {
             updateJurisdictionField();
             updateDistrictField();
+            updateWardField();
         });
-        regionSelect.addEventListener('change', updateDistrictField);
+        regionSelect.addEventListener('change', () => {
+            updateDistrictField();
+            updateWardField();
+        });
+        districtSelect.addEventListener('change', updateWardField);
         updateJurisdictionField();
         updateDistrictField();
+        updateWardField();
     </script>
     <script src="{% static 'js/pwa.js' %}"></script>
 </body>

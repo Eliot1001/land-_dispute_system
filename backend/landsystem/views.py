@@ -7,7 +7,7 @@ from django.views.decorators.http import require_http_methods
 from django.http import JsonResponse, FileResponse, HttpResponseForbidden
 from django.db.models import Q, Count
 from django.utils import timezone
-from .models import Case, Citizen, OfficerProfile, CaseDocument, CaseFeedback, DISTRICTS_BY_REGION
+from .models import Case, Citizen, OfficerProfile, CaseDocument, CaseFeedback, DISTRICTS_BY_REGION, WARDS_BY_DISTRICT
 import json
 import math
 
@@ -506,6 +506,7 @@ def register_officer(request):
         level = request.POST.get('level')
         region = request.POST.get('region')
         district = request.POST.get('district', '').strip()
+        ward = request.POST.get('ward', '').strip()
         jurisdiction = request.POST.get('jurisdiction', '').strip()
 
         common_context = {
@@ -513,6 +514,7 @@ def register_officer(request):
             'regions': OfficerProfile.REGION_CHOICES,
             'levels_requiring_district': LEVELS_REQUIRING_DISTRICT_FIELD,
             'districts_by_region': DISTRICTS_BY_REGION,
+            'wards_by_district': WARDS_BY_DISTRICT,
         }
 
         if not all([first_name, last_name, email, phone, username, password, password_confirm, level, region]):
@@ -529,25 +531,38 @@ def register_officer(request):
         if level not in valid_levels or region not in valid_regions:
             return render(request, 'register_officer.html', {'error': 'Invalid level or region', **common_context})
 
-        if level in LEVELS_REQUIRING_JURISDICTION and not jurisdiction:
-            level_label = dict(OfficerProfile.LEVEL_CHOICES)[level]
-            return render(request, 'register_officer.html', {
-                'error': f'Please enter which {level_label.replace(" Officer", "").lower()} this officer serves.',
-                **common_context,
-            })
-
+        # Village/Street/Ward officers pick a district, then a ward within
+        # it (from WARDS_BY_DISTRICT if available, otherwise typed in).
         if level in LEVELS_REQUIRING_DISTRICT_FIELD:
             if district not in DISTRICTS_BY_REGION.get(region, []):
                 return render(request, 'register_officer.html', {
                     'error': 'Please select which district this officer\'s area falls under.',
                     **common_context,
                 })
+            if not ward:
+                return render(request, 'register_officer.html', {
+                    'error': 'Please select or enter which ward this officer\'s area falls under.',
+                    **common_context,
+                })
         else:
             district = ''
+            ward = ''
 
-        # Regional/High Court officers cover the whole region, not a
-        # specific place, so any jurisdiction entered for them is ignored.
-        if level not in LEVELS_REQUIRING_JURISDICTION:
+        # A Ward officer's jurisdiction IS the ward they just picked - no
+        # separate free-text entry needed. Village/Street/District Land
+        # Officers still name their specific place directly. Regional/High
+        # Court cover the whole region, so any jurisdiction entered for them
+        # is ignored.
+        if level == 'ward':
+            jurisdiction = ward
+        elif level in LEVELS_REQUIRING_JURISDICTION:
+            if not jurisdiction:
+                level_label = dict(OfficerProfile.LEVEL_CHOICES)[level]
+                return render(request, 'register_officer.html', {
+                    'error': f'Please enter which {level_label.replace(" Officer", "").lower()} this officer serves.',
+                    **common_context,
+                })
+        else:
             jurisdiction = ''
 
         user = User.objects.create_user(
@@ -558,7 +573,7 @@ def register_officer(request):
             last_name=last_name,
         )
         officer = OfficerProfile.objects.create(
-            user=user, region=region, level=level, district=district, jurisdiction=jurisdiction, phone=phone,
+            user=user, region=region, level=level, district=district, ward=ward, jurisdiction=jurisdiction, phone=phone,
         )
 
         place_parts = [p for p in [jurisdiction, district, officer.get_region_display()] if p]
@@ -571,6 +586,7 @@ def register_officer(request):
         'regions': OfficerProfile.REGION_CHOICES,
         'levels_requiring_district': LEVELS_REQUIRING_DISTRICT_FIELD,
         'districts_by_region': DISTRICTS_BY_REGION,
+        'wards_by_district': WARDS_BY_DISTRICT,
         'initial_level': request.GET.get('level', ''),
         'initial_region': request.GET.get('region', ''),
     })
@@ -591,25 +607,29 @@ def edit_officer_jurisdiction(request, officer_id):
         return redirect('officer_list')
 
     jurisdiction_label = officer.get_level_display().replace(' Officer', '')
+    # Village/Street/Ward officers all pick district + ward. A Ward
+    # officer's jurisdiction IS their ward, so they don't get a separate
+    # free-text jurisdiction field - Village/Street/District Land Officers do.
     needs_district = officer.level in LEVELS_REQUIRING_DISTRICT_FIELD
+    needs_ward = needs_district
+    show_jurisdiction_field = officer.level != 'ward'
     districts = DISTRICTS_BY_REGION.get(officer.region, [])
+    wards = WARDS_BY_DISTRICT.get(officer.district, [])
 
     common_context = {
         'officer': officer,
         'jurisdiction_label': jurisdiction_label,
         'needs_district': needs_district,
+        'needs_ward': needs_ward,
+        'show_jurisdiction_field': show_jurisdiction_field,
         'districts': districts,
+        'wards_by_district': WARDS_BY_DISTRICT,
     }
 
     if request.method == 'POST':
         jurisdiction = request.POST.get('jurisdiction', '').strip()
         district = request.POST.get('district', '').strip()
-
-        if not jurisdiction:
-            return render(request, 'edit_officer_jurisdiction.html', {
-                'error': f'Please enter which {jurisdiction_label.lower()} this officer serves.',
-                **common_context,
-            })
+        ward = request.POST.get('ward', '').strip()
 
         if needs_district and district not in districts:
             return render(request, 'edit_officer_jurisdiction.html', {
@@ -617,9 +637,25 @@ def edit_officer_jurisdiction(request, officer_id):
                 **common_context,
             })
 
+        if needs_ward and not ward:
+            return render(request, 'edit_officer_jurisdiction.html', {
+                'error': 'Please select or enter which ward this officer\'s area falls under.',
+                **common_context,
+            })
+
+        if officer.level == 'ward':
+            jurisdiction = ward
+        elif not jurisdiction:
+            return render(request, 'edit_officer_jurisdiction.html', {
+                'error': f'Please enter which {jurisdiction_label.lower()} this officer serves.',
+                **common_context,
+            })
+
         officer.jurisdiction = jurisdiction
         if needs_district:
             officer.district = district
+        if needs_ward:
+            officer.ward = ward
         officer.save()
         messages.success(request, f'Updated jurisdiction for {officer.user.get_full_name() or officer.user.username}.')
         return redirect('officer_list')
