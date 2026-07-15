@@ -4,7 +4,6 @@ import '../models/case_model.dart';
 import '../services/api_service.dart';
 import '../theme.dart';
 import 'case_detail_screen.dart';
-import 'login_screen.dart';
 import 'profile_screen.dart';
 import 'submit_case_screen.dart';
 
@@ -42,24 +41,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
-  Future<void> _logout() async {
-    await ApiService.logout();
-    if (!mounted) return;
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const LoginScreen()),
-      (route) => false,
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final counts = _result?.counts ?? {};
     return Scaffold(
       appBar: AppBar(
         title: const Text('My Cases'),
-        actions: [
-          IconButton(icon: const Icon(Icons.logout), onPressed: _logout),
-        ],
       ),
       drawer: _buildDrawer(),
       body: RefreshIndicator(
@@ -119,15 +106,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
             onTap: () {
               Navigator.of(context).pop();
               Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ProfileScreen()));
-            },
-          ),
-          const Divider(),
-          ListTile(
-            leading: const Icon(Icons.logout, color: Colors.red),
-            title: const Text('Sign Out', style: TextStyle(color: Colors.red)),
-            onTap: () {
-              Navigator.of(context).pop();
-              _logout();
             },
           ),
         ],

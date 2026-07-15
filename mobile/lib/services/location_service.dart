@@ -10,15 +10,15 @@ class LocationException implements Exception {
 }
 
 class LocationService {
-  // Mirrors the website's behavior: the first GPS fix on a phone is often a
-  // fast, low-accuracy network fix before the chip locks on to a much more
-  // exact one, so keep listening for the best reading within a time budget
-  // rather than accepting whatever arrives first. A real GPS fix - especially
-  // a cold start indoors - can take well over 15s, so the budget here is
-  // generous, and if nothing arrives in time we fall back to the device's
-  // last known location rather than failing outright.
-  static const double _goodAccuracyMeters = 30;
-  static const Duration _maxWait = Duration(seconds: 35);
+  // The first GPS fix on a phone is often a fast, low-accuracy network fix
+  // before the chip locks on to a much more exact one. Rather than making
+  // the citizen stare at a blank map until a near-perfect fix arrives, every
+  // fix is handed to [onUpdate] as it comes in so the pin appears and
+  // refines itself immediately, while a shorter time budget than a full GPS
+  // cold start still bounds how long "final" resolution takes before
+  // falling back to the device's last known location.
+  static const double _goodAccuracyMeters = 50;
+  static const Duration _maxWait = Duration(seconds: 15);
 
   /// Returns the device's cached last-known position, if any, without
   /// waiting for a fresh GPS fix. Used to show a location immediately while
@@ -33,7 +33,11 @@ class LocationService {
     }
   }
 
-  static Future<Position> getBestLocation() async {
+  /// Resolves the best fix obtained within the time budget. If [onUpdate] is
+  /// given, it's called with every fix as it arrives (each one at least as
+  /// accurate as the last) so a caller can render progress immediately
+  /// instead of waiting for the final result.
+  static Future<Position> getBestLocation({void Function(Position)? onUpdate}) async {
     if (!await _ensurePermission()) {
       throw LocationException(
         'Location permission denied. Please enable location access for this app in your device settings.',
@@ -73,11 +77,12 @@ class LocationService {
     }
 
     subscription = Geolocator.getPositionStream(
-      locationSettings: const LocationSettings(accuracy: LocationAccuracy.best, distanceFilter: 0),
+      locationSettings: const LocationSettings(accuracy: LocationAccuracy.high, distanceFilter: 0),
     ).listen(
       (position) {
         if (best == null || position.accuracy < best!.accuracy) {
           best = position;
+          onUpdate?.call(position);
         }
         if (position.accuracy <= _goodAccuracyMeters) {
           finish();

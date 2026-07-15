@@ -53,7 +53,11 @@ class _SubmitCaseScreenState extends State<SubmitCaseScreen> {
         await _setPinned(ll.LatLng(cached.latitude, cached.longitude), accuracy: cached.accuracy);
       }
 
-      final position = await LocationService.getBestLocation();
+      final position = await LocationService.getBestLocation(
+        onUpdate: (p) {
+          if (mounted) _setPinned(ll.LatLng(p.latitude, p.longitude), accuracy: p.accuracy);
+        },
+      );
       if (!mounted) return;
       await _setPinned(ll.LatLng(position.latitude, position.longitude), accuracy: position.accuracy);
     } catch (e) {
