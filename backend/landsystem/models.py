@@ -96,9 +96,10 @@ WARDS_BY_DISTRICT = {
         'Upanga Magharibi', 'Upanga Mashariki', 'Vingunguti', 'Kivukoni',
     ],
     'Kinondoni': [
-        'Kawe', 'Kijitonyama', 'Kinondoni', 'Kunduchi', 'Magomeni',
-        'Mikocheni', 'Msasani', 'Mwananyamala', 'Ndugumbi', 'Tandale',
-        'Wazo', 'Kigogo', 'Hananasif', 'Manzese', 'Mzimuni',
+        'Bunju', 'Hananasif', 'Kawe', 'Kigogo', 'Kijitonyama', 'Kinondoni',
+        'Kunduchi', 'Mabwepande', 'Magomeni', 'Makongo', 'Makumbusho',
+        'Mbezi Juu', 'Mbweni', 'Mikocheni', 'Msasani', 'Mwananyamala',
+        'Mzimuni', 'Ndugumbi', 'Tandale', 'Wazo',
     ],
     'Temeke': [
         'Azimio', 'Chang\'ombe', 'Kigamboni', 'Kurasini', 'Mbagala',
