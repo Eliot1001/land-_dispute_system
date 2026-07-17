@@ -317,7 +317,7 @@
                         {% else %}
                         <div class="alert alert-error" style="margin-top: 20px;">
                             <i class="fas fa-circle-info"></i>
-                            <span>There's no other {{ officer.get_level_display }} registered for {{ officer.get_region_display }} to take over these cases. Register a new officer first, then come back to delete this one.</span>
+                            <span>There's no other {{ officer.get_level_display }} registered for {{ officer.get_region_display }} to take over these cases. Register a new officer for this role below &mdash; their cases will be transferred automatically and this account will be removed.</span>
                         </div>
                         {% endif %}
                     </div>
@@ -325,7 +325,7 @@
 
                     <div class="action-buttons">
                         {% if assigned_cases and not other_officers %}
-                        <a href="{% url 'register_officer' %}?level={{ officer.level }}&region={{ officer.region }}" class="btn btn-primary">
+                        <a href="{% url 'register_officer' %}?level={{ officer.level }}&region={{ officer.region }}&replace_officer_id={{ officer.id }}" class="btn btn-primary">
                             <i class="fas fa-user-plus"></i> Register New Officer
                         </a>
                         {% else %}

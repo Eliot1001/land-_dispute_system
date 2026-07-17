@@ -508,6 +508,10 @@ def register_officer(request):
         district = request.POST.get('district', '').strip()
         ward = request.POST.get('ward', '').strip()
         jurisdiction = request.POST.get('jurisdiction', '').strip()
+        replace_officer_id = request.POST.get('replace_officer_id', '').strip()
+        replace_officer = None
+        if replace_officer_id:
+            replace_officer = OfficerProfile.objects.filter(pk=replace_officer_id).select_related('user').first()
 
         common_context = {
             'levels': OfficerProfile.LEVEL_CHOICES,
@@ -516,6 +520,10 @@ def register_officer(request):
             'districts_by_region': DISTRICTS_BY_REGION,
             'wards_by_district': WARDS_BY_DISTRICT,
             'streets_by_ward': STREETS_BY_WARD,
+            'initial_level': level,
+            'initial_region': region,
+            'initial_replace_officer_id': replace_officer_id,
+            'replace_officer': replace_officer,
         }
 
         if not all([first_name, last_name, email, phone, username, password, password_confirm, level, region]):
@@ -580,7 +588,31 @@ def register_officer(request):
         place_parts = [p for p in [jurisdiction, district, officer.get_region_display()] if p]
         place = ', '.join(place_parts)
         messages.success(request, f'{first_name} {last_name} registered as {officer.get_level_display()} for {place}.')
+
+        # This registration is completing a pending officer replacement (see
+        # delete_officer): hand off the outgoing officer's cases to the one
+        # just created, then remove the outgoing officer. Restricted to the
+        # same level/region as the new officer, matching how cases are routed.
+        if replace_officer_id:
+            old_officer = OfficerProfile.objects.filter(
+                pk=replace_officer_id, region=region, level=level,
+            ).exclude(pk=officer.pk).select_related('user').first()
+            if old_officer and old_officer.user != request.user:
+                old_officer_name = old_officer.user.get_full_name() or old_officer.user.username
+                moved = Case.objects.filter(assigned_to=old_officer.user).update(assigned_to=user)
+                old_officer.user.delete()  # cascades to OfficerProfile
+                messages.success(
+                    request,
+                    f'{moved} case{"s" if moved != 1 else ""} transferred from {old_officer_name}, '
+                    f'and {old_officer_name} has been removed.',
+                )
+
         return redirect('officer_list')
+
+    replace_officer = None
+    replace_officer_id = request.GET.get('replace_officer_id', '')
+    if replace_officer_id:
+        replace_officer = OfficerProfile.objects.filter(pk=replace_officer_id).select_related('user').first()
 
     return render(request, 'register_officer.html', {
         'levels': OfficerProfile.LEVEL_CHOICES,
@@ -591,6 +623,8 @@ def register_officer(request):
         'streets_by_ward': STREETS_BY_WARD,
         'initial_level': request.GET.get('level', ''),
         'initial_region': request.GET.get('region', ''),
+        'initial_replace_officer_id': replace_officer_id,
+        'replace_officer': replace_officer,
     })
 
 
