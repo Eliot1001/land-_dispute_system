@@ -129,7 +129,7 @@ class _CaseDetailScreenState extends State<CaseDetailScreen> {
         if (_statusBanner(c.status) != null) ...[_statusBanner(c.status)!, const SizedBox(height: 12)],
         _infoRow(Icons.description, 'Description', c.description),
         _infoRow(Icons.location_on, 'Location', c.location),
-        if (c.ward.isNotEmpty) _infoRow(Icons.home, 'Ward/Village', c.ward),
+        if (c.ward.isNotEmpty) _infoRow(Icons.home, 'Street/Village', c.ward),
         _infoRow(Icons.map, 'Region', c.regionDisplay),
         _infoRow(Icons.person, 'Assigned Officer', c.assignedOfficer ?? 'Pending assignment'),
         _infoRow(Icons.calendar_today, 'Submitted', DateFormat.yMMMd().add_jm().format(c.createdAt)),

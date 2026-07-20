@@ -10,6 +10,7 @@ from django.utils import timezone
 from .models import Case, Citizen, OfficerProfile, CaseDocument, CaseFeedback, DISTRICTS_BY_REGION, WARDS_BY_DISTRICT, STREETS_BY_WARD
 import json
 import math
+import re
 
 
 # Escalation hierarchy, lowest to highest. Matches OfficerProfile.LEVEL_CHOICES
@@ -94,19 +95,56 @@ def assign_case_to_officer(case):
     officer there to pick up.
     """
     try:
+        def normalize_place_name(value):
+            return re.sub(r'[^a-z0-9]+', ' ', (value or '').strip().lower()).strip()
+
+        def case_place_candidates():
+            candidates = []
+            for raw_value in [case.ward, case.location.split(',')[0] if case.location else '']:
+                normalized = normalize_place_name(raw_value)
+                if normalized and normalized not in candidates:
+                    candidates.append(normalized)
+            return candidates
+
+        def exact_jurisdiction_matches(officers, candidates):
+            matched = []
+            for officer in officers:
+                if normalize_place_name(officer.jurisdiction) in candidates:
+                    matched.append(officer)
+            return matched
+
+        place_candidates = case_place_candidates()
+
+        if case.current_level == 'village' and not case.assigned_to_id and place_candidates:
+            for initial_level in ('village', 'street'):
+                exact_initial_matches = exact_jurisdiction_matches(
+                    OfficerProfile.objects.filter(region=case.region, level=initial_level).select_related('user'),
+                    place_candidates,
+                )
+                if exact_initial_matches:
+                    case.current_level = initial_level
+                    case.assigned_to = exact_initial_matches[0].user
+                    case.save(update_fields=['current_level', 'assigned_to'])
+                    return
+
         officers = list(OfficerProfile.objects.filter(region=case.region, level=case.current_level))
-        if case.current_level in LEVELS_REQUIRING_JURISDICTION and case.ward:
-            ward = case.ward.strip().lower()
-            matched = [
-                o for o in officers
-                if o.jurisdiction and (ward in o.jurisdiction.lower() or o.jurisdiction.lower() in ward)
-            ]
+        if case.current_level in LEVELS_REQUIRING_JURISDICTION and place_candidates:
+            matched = exact_jurisdiction_matches(officers, place_candidates)
+            if not matched:
+                matched = [
+                    o for o in officers
+                    if o.jurisdiction and any(
+                        candidate in normalize_place_name(o.jurisdiction)
+                        or normalize_place_name(o.jurisdiction) in candidate
+                        for candidate in place_candidates
+                    )
+                ]
             if matched:
                 officers = matched
         officer = officers[0] if officers else None
         if officer:
             case.assigned_to = officer.user
-            case.save()
+            case.save(update_fields=['assigned_to'])
     except Exception as e:
         print(f"Error assigning case: {e}")
 

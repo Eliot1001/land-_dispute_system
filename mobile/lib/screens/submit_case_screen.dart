@@ -98,7 +98,7 @@ class _SubmitCaseScreenState extends State<SubmitCaseScreen> {
       return;
     }
     if (_wardController.text.trim().isEmpty) {
-      setState(() => _error = 'Please enter your ward or village');
+      setState(() => _error = 'Please enter your street or village');
       return;
     }
     if (_pinned == null) {
@@ -166,8 +166,8 @@ class _SubmitCaseScreenState extends State<SubmitCaseScreen> {
           TextField(
             controller: _wardController,
             decoration: const InputDecoration(
-              labelText: 'Ward / Village',
-              hintText: 'Where are you coming from?',
+              labelText: 'Street / Village',
+              hintText: 'Enter your street or village',
             ),
           ),
           const SizedBox(height: 16),
