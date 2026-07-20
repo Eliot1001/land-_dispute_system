@@ -705,8 +705,11 @@ def edit_officer_jurisdiction(request, officer_id):
 
 @login_required(login_url='login')
 def delete_officer(request, officer_id):
-    """Admin-only: remove an officer. Any cases currently assigned to them
-    must be handed off to another officer first, chosen by the admin."""
+    """Admin-only: remove an officer.
+
+    Any cases currently assigned to the officer become unassigned when the
+    linked user account is deleted because Case.assigned_to uses SET_NULL.
+    """
     if not is_admin_user(request.user):
         return HttpResponseForbidden("Only administrators can delete officers.")
 
@@ -717,27 +720,8 @@ def delete_officer(request, officer_id):
         return redirect('officer_list')
 
     assigned_cases = Case.objects.filter(assigned_to=officer.user)
-    # Only officers at the same level and region are valid replacements -
-    # that's how cases get routed (see assign_case_to_officer).
-    other_officers = OfficerProfile.objects.filter(
-        region=officer.region, level=officer.level,
-    ).exclude(pk=officer.pk).select_related('user')
 
     if request.method == 'POST':
-        reassign_to_id = request.POST.get('reassign_to')
-
-        if assigned_cases.exists():
-            if not reassign_to_id:
-                messages.error(request, "Select an officer to take over this officer's cases before deleting.")
-                return render(request, 'delete_officer_confirm.html', {
-                    'officer': officer,
-                    'assigned_cases': assigned_cases,
-                    'other_officers': other_officers,
-                })
-
-            new_officer = get_object_or_404(other_officers, pk=reassign_to_id)
-            assigned_cases.update(assigned_to=new_officer.user)
-
         officer_name = officer.user.get_full_name() or officer.user.username
         officer.user.delete()  # cascades to OfficerProfile
         messages.success(request, f'{officer_name} has been removed.')
@@ -746,7 +730,6 @@ def delete_officer(request, officer_id):
     return render(request, 'delete_officer_confirm.html', {
         'officer': officer,
         'assigned_cases': assigned_cases,
-        'other_officers': other_officers,
     })
 
 

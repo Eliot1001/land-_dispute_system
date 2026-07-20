@@ -295,7 +295,7 @@
 
                         <div class="alert alert-warning">
                             <i class="fas fa-triangle-exclamation"></i>
-                            <span>This officer has {{ assigned_cases|length }} case{{ assigned_cases|length|pluralize }} assigned to them. Choose who should take these over before deleting.</span>
+                            <span>This officer has {{ assigned_cases|length }} case{{ assigned_cases|length|pluralize }} assigned to them. Deleting this account will leave those cases unassigned until another officer picks them up.</span>
                         </div>
 
                         <ul class="case-list">
@@ -303,36 +303,13 @@
                             <li>#{{ case.id }} &mdash; {{ case.title }} ({{ case.get_status_display }})</li>
                             {% endfor %}
                         </ul>
-
-                        {% if other_officers %}
-                        <div class="form-group" style="margin-top: 20px;">
-                            <label for="reassign_to">Reassign their cases to</label>
-                            <select id="reassign_to" name="reassign_to" required>
-                                <option value="" disabled selected>Select an officer</option>
-                                {% for other in other_officers %}
-                                <option value="{{ other.id }}">{{ other.user.get_full_name|default:other.user.username }} &mdash; {{ other.get_level_display }}, {{ other.get_region_display }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        {% else %}
-                        <div class="alert alert-error" style="margin-top: 20px;">
-                            <i class="fas fa-circle-info"></i>
-                            <span>There's no other {{ officer.get_level_display }} registered for {{ officer.get_region_display }} to take over these cases. Register a new officer for this role below &mdash; their cases will be transferred automatically and this account will be removed.</span>
-                        </div>
-                        {% endif %}
                     </div>
                     {% endif %}
 
                     <div class="action-buttons">
-                        {% if assigned_cases and not other_officers %}
-                        <a href="{% url 'register_officer' %}?level={{ officer.level }}&region={{ officer.region }}&replace_officer_id={{ officer.id }}" class="btn btn-primary">
-                            <i class="fas fa-user-plus"></i> Register New Officer
-                        </a>
-                        {% else %}
                         <button type="submit" class="btn btn-danger">
                             <i class="fas fa-trash"></i> Delete Officer
                         </button>
-                        {% endif %}
                         <a href="{% url 'officer_list' %}" class="btn btn-secondary">
                             <i class="fas fa-times"></i> Cancel
                         </a>
